@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 88684271e27adb843b6570957c9e7637, type: 3}
+  m_Name: _vrm1_
+  m_EditorClassIdentifier: 
+  m_prefab: {fileID: -1728013695380148634, guid: 198296e1fbb2c134892d1e64def8c462,
+    type: 3}
+  Meta:
+    Name: Alicia Solid
+    Version: 1.10
+    Authors:
+    - "\xA9 DWANGO Co., Ltd."
+    CopyrightInformation: 
+    ContactInformation: https://3d.nicovideo.jp/alicia/
+    References:
+    - 
+    ThirdPartyLicenses: 
+    Thumbnail: {fileID: 2800000, guid: 0f727a0e63013de44a941b23cdd12bf1, type: 3}
+    AvatarPermission: 2
+    ViolentUsage: 0
+    SexualUsage: 0
+    CommercialUsage: 1
+    PoliticalOrReligiousUsage: 0
+    AntisocialOrHateUsage: 0
+    CreditNotation: 0
+    Redistribution: 0
+    Modification: 0
+    OtherLicenseUrl: https://3d.nicovideo.jp/alicia/rule.html
+  Expression:
+    Happy: {fileID: 11400000, guid: 2ba8af8a98dbd194394585a0e6de822b, type: 2}
+    Angry: {fileID: 11400000, guid: a1355b143dd9eee49a533788c1c04b8d, type: 2}
+    Sad: {fileID: 11400000, guid: fa3838ff393eb1f429f228a28dc6fbf5, type: 2}
+    Relaxed: {fileID: 11400000, guid: 8416251164a71914faf60ca198e75068, type: 2}
+    Surprised: {fileID: 11400000, guid: 9f5f2c4ba0ef4a34f9c62f31ab51079a, type: 2}
+    Aa: {fileID: 11400000, guid: 5ba26f9dce3228b4cbc392846d049674, type: 2}
+    Ih: {fileID: 11400000, guid: 5942b484e61f9a342a6467b0f62f525d, type: 2}
+    Ou: {fileID: 11400000, guid: ed33a7d3e6fb1c4439843bef87b3268f, type: 2}
+    Ee: {fileID: 11400000, guid: 1493a0ab1212d5942b46026c42828f31, type: 2}
+    Oh: {fileID: 11400000, guid: 2e4557447bbe2134eaa58b25b94877f0, type: 2}
+    Blink: {fileID: 11400000, guid: d0092fe4c6dc51c42825f01581a92146, type: 2}
+    BlinkLeft: {fileID: 11400000, guid: 5eecf67145812ec4ab64d9f5680eabe6, type: 2}
+    BlinkRight: {fileID: 11400000, guid: 5943511c75dca954cb923fa4393181c9, type: 2}
+    LookUp: {fileID: 11400000, guid: 6795ac58ed2438e4db4841d39df795d1, type: 2}
+    LookDown: {fileID: 11400000, guid: 19ff99fdc097abb458555d1f7a43ea8b, type: 2}
+    LookLeft: {fileID: 11400000, guid: 8649b50dac87f054cb156ef37f34f6ae, type: 2}
+    LookRight: {fileID: 11400000, guid: 265ffe1e7ad871f44bba2496839d9eeb, type: 2}
+    Neutral: {fileID: 11400000, guid: e6a36d363c7b96142bdfb1a18f4d5ebf, type: 2}
+    CustomClips: []
+  LookAt:
+    OffsetFromHead: {x: -0, y: 0.059999943, z: 0}
+    LookAtType: 0
+    HorizontalOuter:
+      CurveXRangeDegree: 20
+      CurveYRangeDegree: 5
+    HorizontalInner:
+      CurveXRangeDegree: 20
+      CurveYRangeDegree: 5
+    VerticalDown:
+      CurveXRangeDegree: 20
+      CurveYRangeDegree: 5
+    VerticalUp:
+      CurveXRangeDegree: 20
+      CurveYRangeDegree: 5
+  FirstPerson:
+    Renderers:
+    - Renderer: mesh/body_top
+      FirstPersonFlag: 0
+    - Renderer: mesh/body_under
+      FirstPersonFlag: 0
+    - Renderer: mesh/cloth
+      FirstPersonFlag: 0
+    - Renderer: mesh/cloth1
+      FirstPersonFlag: 0
+    - Renderer: mesh/cloth2
+      FirstPersonFlag: 0
+    - Renderer: mesh/cloth_ribbon
+      FirstPersonFlag: 0
+    - Renderer: mesh/eye
+      FirstPersonFlag: 0
+    - Renderer: mesh/face
+      FirstPersonFlag: 0
+    - Renderer: mesh/flonthair
+      FirstPersonFlag: 0
+    - Renderer: mesh/neck
+      FirstPersonFlag: 0
+    - Renderer: mesh/other
+      FirstPersonFlag: 0
+    - Renderer: mesh/other02
+      FirstPersonFlag: 0

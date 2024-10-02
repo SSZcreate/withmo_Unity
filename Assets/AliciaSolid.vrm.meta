@@ -1,0 +1,207 @@
+fileFormatVersion: 2
+guid: 198296e1fbb2c134892d1e64def8c462
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects:
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: aa
+    second: {fileID: 11400000, guid: 5ba26f9dce3228b4cbc392846d049674, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: angry
+    second: {fileID: 11400000, guid: a1355b143dd9eee49a533788c1c04b8d, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: blink
+    second: {fileID: 11400000, guid: d0092fe4c6dc51c42825f01581a92146, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: blinkLeft
+    second: {fileID: 11400000, guid: 5eecf67145812ec4ab64d9f5680eabe6, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: blinkRight
+    second: {fileID: 11400000, guid: 5943511c75dca954cb923fa4393181c9, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: ee
+    second: {fileID: 11400000, guid: 1493a0ab1212d5942b46026c42828f31, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: happy
+    second: {fileID: 11400000, guid: 2ba8af8a98dbd194394585a0e6de822b, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: ih
+    second: {fileID: 11400000, guid: 5942b484e61f9a342a6467b0f62f525d, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: lookDown
+    second: {fileID: 11400000, guid: 19ff99fdc097abb458555d1f7a43ea8b, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: lookLeft
+    second: {fileID: 11400000, guid: 8649b50dac87f054cb156ef37f34f6ae, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: lookRight
+    second: {fileID: 11400000, guid: 265ffe1e7ad871f44bba2496839d9eeb, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: lookUp
+    second: {fileID: 11400000, guid: 6795ac58ed2438e4db4841d39df795d1, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: neutral
+    second: {fileID: 11400000, guid: e6a36d363c7b96142bdfb1a18f4d5ebf, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: oh
+    second: {fileID: 11400000, guid: 2e4557447bbe2134eaa58b25b94877f0, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: ou
+    second: {fileID: 11400000, guid: ed33a7d3e6fb1c4439843bef87b3268f, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: relaxed
+    second: {fileID: 11400000, guid: 8416251164a71914faf60ca198e75068, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: sad
+    second: {fileID: 11400000, guid: fa3838ff393eb1f429f228a28dc6fbf5, type: 2}
+  - first:
+      type: UniVRM10:VRM10Expression
+      assembly: VRM10
+      name: surprised
+    second: {fileID: 11400000, guid: 9f5f2c4ba0ef4a34f9c62f31ab51079a, type: 2}
+  - first:
+      type: UniVRM10:VRM10Object
+      assembly: VRM10
+      name: _vrm1_
+    second: {fileID: 11400000, guid: 5e8ebf720ee19ce4b94fdfb48395d7de, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_body
+    second: {fileID: 2100000, guid: 30b61d5f45820c641bea5df504018ed8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_body_wear
+    second: {fileID: 2100000, guid: f271e3e9921eda94cb8f3184c2dfcf11, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_eye
+    second: {fileID: 2100000, guid: 2cb4a03185cf8cb4cb1c29cb7f1c84ff, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_eye_white
+    second: {fileID: 2100000, guid: 610cedda11c71ee4b8c587db8729b037, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_face
+    second: {fileID: 2100000, guid: c7c6731c1e758e94f860e51b2f738671, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_face_mastuge
+    second: {fileID: 2100000, guid: d4c01ba800ce0d24290cc2a6316269fa, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_hair
+    second: {fileID: 2100000, guid: b3a90242a2212db4985428a47b07708c, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_hair_trans
+    second: {fileID: 2100000, guid: 3567b28f3224aac44b44a8390503760d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_hair_trans_zwrite
+    second: {fileID: 2100000, guid: bc5dc02368d2fe540bee69f89a5f2cc2, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_hair_wear
+    second: {fileID: 2100000, guid: fc6956b51de7905428de4cbdb97315bf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_other_zwrite
+    second: {fileID: 2100000, guid: 875dda66464818647975edc981e4ac3e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Alicia_wear
+    second: {fileID: 2100000, guid: 5eadd391ac61b8c4d84362060f24536e, type: 2}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_body
+    second: {fileID: 2800000, guid: ee1bd5a7849e13040b658ade42d95c0d, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_eye
+    second: {fileID: 2800000, guid: f759e556555b3f44d9b7996a3567761b, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_face
+    second: {fileID: 2800000, guid: e1e92e356989ad64182fe7644f13c311, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_hair
+    second: {fileID: 2800000, guid: 8c4f595989c97904f8d4ae946d83514d, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_other
+    second: {fileID: 2800000, guid: eb050b72bbcf5104ebfa7c931d61762b, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Alicia_wear
+    second: {fileID: 2800000, guid: 882d2b96ce0ebf64585d43e498c78b47, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: Sphere
+    second: {fileID: 2800000, guid: 15599e9483f7f244ea4b45bf5bbe4f12, type: 3}
+  - first:
+      type: UnityEngine:Texture
+      assembly: UnityEngine.CoreModule
+      name: thumbnail__VRM10
+    second: {fileID: 2800000, guid: 0f727a0e63013de44a941b23cdd12bf1, type: 3}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: f66ead3390398f443aa127b741826ad9, type: 3}
+  MigrateToVrm1: 1
+  RenderPipeline: 0
