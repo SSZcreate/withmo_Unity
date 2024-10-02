@@ -108,7 +108,7 @@ GameObject:
   - component: {fileID: 5569183157538784654}
   - component: {fileID: 4172220612683119336}
   m_Layer: 0
-  m_Name: "\u901A\u77E5BOX"
+  m_Name: TuchiBOX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

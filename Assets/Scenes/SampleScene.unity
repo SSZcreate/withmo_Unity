@@ -817,7 +817,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 330.15, y: 50}
+  m_AnchoredPosition: {x: 320, y: 50}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1080412936
@@ -2024,7 +2024,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 902598817}
-  - {fileID: 7457303171884392079}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -2873,9 +2872,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4431558296139659654}
   - component: {fileID: 5273447793337091808}
-  - component: {fileID: 5273447793337091809}
   m_Layer: 0
-  m_Name: "\u901A\u77E5BOX"
+  m_Name: TuchiBOX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3108,20 +3106,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &5273447793337091809
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4521916330241765293}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2e91989e64043f74ca3bce526351dffa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  particleSystem: {fileID: 0}
-  smoke: {fileID: 0}
 --- !u!1 &5340952681488697657
 GameObject:
   m_ObjectHideFlags: 0
@@ -3435,11 +3419,11 @@ Transform:
   m_GameObject: {fileID: 1612063981308011181}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -400.04816, y: -866.05707, z: -2.089184}
-  m_LocalScale: {x: 0.7407408, y: 0.7407408, z: 0.7407408}
+  m_LocalPosition: {x: -0.06500244, y: 0.82299805, z: -2.8203986}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1820845880}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &7579582523057367314
 Transform:
@@ -3665,6 +3649,7 @@ SceneRoots:
   - {fileID: 41684037}
   - {fileID: 2804839016691626394}
   - {fileID: 8414874249979078807}
+  - {fileID: 7457303171884392079}
   - {fileID: 602984309824408459}
   - {fileID: 1502747559}
   - {fileID: 1820845880}
