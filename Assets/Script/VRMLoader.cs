@@ -10,19 +10,24 @@ using Unity.VisualScripting.Antlr3.Runtime;
 
 public class VRMLoader : MonoBehaviour
 {
-    // ロードの進捗状況を管理する
     public GameObject kurukuru;
     public GameObject defo;
     public Slider slider; 
 
     private Animator animator;
+
+    [SerializeField] private int animationRange; // アニメーション範囲を設定
     private bool vrmLoaded = false; // VRMがロードされたかどうかを示すフラグ
     public Vrm10RuntimeExpression vrm10RuntimeExpression;
     private Vrm10Instance vrm10Instance;
-    
+
     //モデルの大きさ
     float scale;
+
+    private bool isTouchAnimationPlaying = false; // タッチアニメーションが再生中かのフラグ
+    private static readonly string TouchParam = "Touch";
     
+    [SerializeField] private float touchAnimationDuration = 2.0f; // タッチアニメーションの継続時間
 
     public async void ReceiveVRMFilePath(string path)
     {   
@@ -67,13 +72,6 @@ public class VRMLoader : MonoBehaviour
         vrmLoaded = true; // VRMがロードされたことを示すフラグを設定
     }
 
-    //delay秒遅らせる
-    IEnumerator InvokeAfterDelay(System.Action action, float delay)
-    {   
-        yield return new WaitForSeconds(delay);
-        action();
-    }
-
     //Sliderでスケール変更
     public void ScaleAdjust()
     {   
@@ -96,16 +94,51 @@ public class VRMLoader : MonoBehaviour
 
     void Update()
     {
-        // VRMがロードされていない場合は何もしない
-        if (!vrmLoaded)
-            return;
-
-        // animatorがnullでないことを確認してから処理を実行
         if (animator != null)
-        {   
-            //1~6のアニメーションを流す
-            animator.SetInteger("random", Random.Range(1, 6));
+        {
+            // 通常のアニメーションをランダムで再生
+            if (!isTouchAnimationPlaying)
+            {
+                animator.SetInteger("random", Random.Range(1, animationRange));
+            }
+
+            // タッチ入力があるかを確認
+            if (Input.touchCount > 0)
+            {
+                // タッチが発生したら、現在のアニメーションをスキップしてタッチアニメーションに遷移
+                ForceTransitionToTouchAnimation();
+            }
         }
     }
-}
 
+    // 現在のアニメーションを強制的にスキップし、Touchアニメーションに強制的に遷移させるメソッド
+    private void ForceTransitionToTouchAnimation()
+    {
+        if (isTouchAnimationPlaying) return; // 既にタッチアニメーションが再生中なら処理しない
+
+        // 現在のアニメーションを取得
+        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0); // レイヤー0のステート情報を取得
+        int currentStateHash = stateInfo.fullPathHash; // 現在のステートのハッシュ値を取得
+
+        // 現在のアニメーションを強制的に終了させ、再生時間を1に設定（最終フレームにジャンプ）
+        animator.Play(currentStateHash, 0, 1.0f); // レイヤー0、再生時間1（終わり）
+
+        // Touchアニメーションを再生
+        animator.SetBool(TouchParam, true); // Touch パラメータをオンにする
+
+        isTouchAnimationPlaying = true;
+
+        // コルーチンを使って、一定時間後にTouchアニメーションを終了
+        StartCoroutine(ResetTouchAfterDelay(touchAnimationDuration));
+    }
+
+    // 一定時間後にTouchアニメーションを終了させるコルーチン
+    private IEnumerator ResetTouchAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Touch パラメータをオフにし、通常のアニメーション再生に戻す
+        animator.SetBool(TouchParam, false);
+        isTouchAnimationPlaying = false;
+    }
+}
