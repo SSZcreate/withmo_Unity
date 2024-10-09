@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -20,33 +21,40 @@ public class VRMLoader : MonoBehaviour
 
     [Header("Touch Animation Settings")]
     [SerializeField] private string touchParamName = "Touch"; // Touchパラメータ名
-    [SerializeField] private float touchAnimationDuration = 2.0f; // タッチアニメーションの継続時間（秒）
+
+    [Header("Camera Settings")]
+    [SerializeField] private Animator cameraAnimator; // InspectorでカメラのAnimatorを割り当てる
+    [SerializeField] private string cameraTriggerParamName = "CameraTrigger"; // カメラアニメーション用のTriggerパラメータ名
 
     private Animator animator;
     private Vrm10RuntimeExpression vrm10RuntimeExpression;
     private Vrm10Instance vrm10Instance;
 
-    // フラグとタイマー
-    private bool vrmLoaded = false; // VRMがロードされたかどうか
-    private bool isTouchAnimationPlaying = false; // タッチアニメーションが再生中か
-    private float randomAnimationTimer = 0f; // ランダムアニメーションのタイマー
-
-    // ステート管理
-    private string previousStateName = "";
-
-    // Animatorパラメータのハッシュ
+    // Animator Controllerで設定したパラメータのハッシュ
     private int touchParamHash;
+    private int randomParamHash;
+    private int cameraTriggerParamHash;
+
+    private float randomAnimationTimer = 0f;
+
+    // 前回のアニメーションステートを保持する変数
+    private string previousStateName = "";
+    private string currentStateName = "";
 
     void Start()
     {
         // Animatorパラメータのハッシュを取得
         touchParamHash = Animator.StringToHash(touchParamName);
+        randomParamHash = Animator.StringToHash("random");
+        cameraTriggerParamHash = Animator.StringToHash(cameraTriggerParamName);
 
         // デフォルトモデルが存在する場合は保持
         if (defo != null)
         {
             defo.SetActive(true);
         }
+
+        Debug.Log("VRMLoader started.");
     }
 
     void Update()
@@ -55,19 +63,18 @@ public class VRMLoader : MonoBehaviour
         {
             // 現在のアニメーションステートを取得
             AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
-            string currentStateName = GetCurrentStateName(currentState);
+            currentStateName = GetCurrentStateName(currentState);
 
             // ステートが変更された場合のみ処理を行う
             if (currentStateName != previousStateName)
             {
                 Debug.Log($"Animation state changed from {previousStateName} to {currentStateName}");
-
                 HandleStateChange(currentStateName, currentState);
                 previousStateName = currentStateName;
             }
 
             // ランダムアニメーションのタイマー更新
-            if (!isTouchAnimationPlaying)
+            if (currentStateName == "Idle")
             {
                 randomAnimationTimer += Time.deltaTime;
                 if (randomAnimationTimer >= randomAnimationInterval)
@@ -76,12 +83,14 @@ public class VRMLoader : MonoBehaviour
                     randomAnimationTimer = 0f;
                 }
             }
-
-            // タッチアニメーションが再生中でない場合のみタッチ入力を検出
-            if (!isTouchAnimationPlaying)
+            else
             {
-                HandleTouchInput();
+                // Idleステートでない場合、ランダムアニメーションのタイマーをリセット
+                randomAnimationTimer = 0f;
             }
+
+            // タッチアニメーションをIdleステートのときだけ有効にする
+            HandleTouchInput(currentStateName);
         }
     }
 
@@ -116,7 +125,7 @@ public class VRMLoader : MonoBehaviour
         switch (currentStateName)
         {
             case "TouchAnimation":
-                isTouchAnimationPlaying = true;
+                Debug.Log("Touch animation started.");
                 break;
 
             case "Idle":
@@ -128,7 +137,7 @@ public class VRMLoader : MonoBehaviour
                 break;
 
             default:
-                isTouchAnimationPlaying = false;
+                // 他のステートに遷移した場合の処理（必要に応じて追加）
                 break;
         }
     }
@@ -138,16 +147,36 @@ public class VRMLoader : MonoBehaviour
     /// </summary>
     private void TriggerRandomAnimation()
     {
+        if (animator == null)
+        {
+            Debug.LogWarning("Animator is null. Cannot trigger random animation.");
+            return;
+        }
+
         int randomAnim = Random.Range(1, animationRange + 1); // 1～animationRangeの範囲
-        animator.SetInteger("random", randomAnim);
+        animator.SetInteger(randomParamHash, randomAnim);
         Debug.Log($"Random animation triggered: {randomAnim}");
     }
 
     /// <summary>
     /// タッチ入力を処理するメソッド
+    /// タッチアニメーションはIdleステートのときだけ有効
     /// </summary>
-    private void HandleTouchInput()
+    /// <param name="currentStateName">現在のステート名</param>
+    private void HandleTouchInput(string currentStateName)
     {
+        // 現在のステートがIdleでない場合、タッチアニメーションを無効にする
+        if (currentStateName != "Idle")
+        {
+            // もしタッチパラメータがtrueになっている場合、falseにリセット
+            if (animator.GetBool(touchParamHash))
+            {
+                animator.SetBool(touchParamHash, false);
+                Debug.Log("Current state is not Idle. Touch parameter reset to false.");
+            }
+            return;
+        }
+
         // モバイルプラットフォーム向けのタッチ入力
         if (Input.touchCount > 0)
         {
@@ -163,6 +192,7 @@ public class VRMLoader : MonoBehaviour
             // 有効範囲内でタッチが開始された場合のみアニメーションをスキップ
             if (isWithinValidRange && touch.phase == TouchPhase.Began)
             {
+                Debug.Log("Touch input detected within valid range and state is Idle.");
                 ForceTransitionToTouchAnimation();
             }
         }
@@ -180,6 +210,7 @@ public class VRMLoader : MonoBehaviour
 
             if (isWithinValidRange)
             {
+                Debug.Log("Mouse click detected within valid range and state is Idle.");
                 ForceTransitionToTouchAnimation();
             }
         }
@@ -188,28 +219,32 @@ public class VRMLoader : MonoBehaviour
 
     /// <summary>
     /// 現在のアニメーションを強制的にスキップし、Touchアニメーションに遷移させるメソッド
+    /// 同時にカメラアニメーションもトリガーします
     /// </summary>
     private void ForceTransitionToTouchAnimation()
     {
-        if (isTouchAnimationPlaying)
-        {
-            Debug.LogWarning("Touch animation is already playing. Ignoring new touch input.");
-            return; // 既にタッチアニメーションが再生中なら処理しない
-        }
-
-        Debug.Log("Transitioning to TouchAnimation.");
-
-        // 現在のアニメーションステート情報を取得
+        // Touchパラメータをオンにする前に、現在のアニメーションをスキップ
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
         int currentStateHash = stateInfo.fullPathHash;
 
-        // 現在のアニメーションを強制的に終了させ、再生時間を1に設定（最終フレームにジャンプ）
+        // 現在のアニメーションを最終フレームにジャンプさせる
         animator.Play(currentStateHash, 0, 1.0f); // レイヤー0、再生時間1（終わり）
+        Debug.Log("Current animation forced to its final frame.");
 
         // Touchアニメーションを再生
         animator.SetBool(touchParamHash, true); // Touch パラメータをオンにする
+        Debug.Log("Touch animation triggered.");
 
-        Debug.Log("Touch animation started.");
+        // カメラアニメーションをトリガー
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.SetTrigger(cameraTriggerParamHash);
+            Debug.Log("Camera animation triggered.");
+        }
+        else
+        {
+            Debug.LogWarning("Camera Animator is not assigned. Cannot trigger camera animation.");
+        }
     }
 
     /// <summary>
@@ -220,8 +255,7 @@ public class VRMLoader : MonoBehaviour
         if (animator != null)
         {
             animator.SetBool(touchParamHash, false);
-            isTouchAnimationPlaying = false;
-            Debug.Log("Idle state detected. Touch parameter reset and flag cleared.");
+            Debug.Log("Touch parameter reset to false.");
         }
     }
 
@@ -236,33 +270,39 @@ public class VRMLoader : MonoBehaviour
         {
             Destroy(vrm10Instance.gameObject);
             vrmLoaded = false;
+            Debug.Log("Existing VRM instance destroyed.");
         }
 
         // デフォルトモデルの削除
         if (defo != null)
         {
             Destroy(defo);
+            Debug.Log("Default model destroyed.");
         }
 
         // ロード画面を表示
         if (kurukuru != null)
         {
             kurukuru.SetActive(true);
+            Debug.Log("Loading screen activated.");
         }
 
         // スライダーリセット
         if (slider != null)
         {
             slider.value = 1;
+            Debug.Log("Slider reset to 1.");
         }
 
         try
         {
             // パスからVRMを非同期で読み込み
             vrm10Instance = await Vrm10.LoadPathAsync(path);
+            Debug.Log($"VRM loaded from path: {path}");
 
             // 読み込んだVRMインスタンスの位置を設定
             vrm10Instance.gameObject.transform.position = Vector3.zero;
+            Debug.Log("VRM instance position set to Vector3.zero.");
 
             // 表情操作
             vrm10RuntimeExpression = vrm10Instance.Runtime.Expression;
@@ -274,9 +314,16 @@ public class VRMLoader : MonoBehaviour
             {
                 Debug.LogError("AnimatorコンポーネントがVRMにアタッチされていません。");
             }
+            else
+            {
+                // Animator Controllerを設定
+                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
+                Debug.Log("Animator Controller 'motion' loaded and assigned.");
+            }
 
             // Facialをアタッチ
             vrm10Instance.gameObject.AddComponent<Facial>();
+            Debug.Log("Facial component added to VRM instance.");
         }
         catch(System.Exception e)
         {
@@ -289,16 +336,11 @@ public class VRMLoader : MonoBehaviour
         if (kurukuru != null)
         {
             kurukuru.SetActive(false);
-        }
-
-        // Animator Controllerを設定
-        if (animator != null)
-        {
-            // アニメーションコントローラのファイル名のみ指定
-            animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
+            Debug.Log("Loading screen deactivated.");
         }
 
         vrmLoaded = true; // VRMがロードされたことを示すフラグを設定
+        Debug.Log("VRM loaded flag set to true.");
     }
 
     /// <summary>
@@ -307,10 +349,14 @@ public class VRMLoader : MonoBehaviour
     public void ScaleAdjust()
     {   
         if (!vrmLoaded || vrm10Instance == null)
+        {
+            Debug.LogWarning("VRM not loaded or vrm10Instance is null. Cannot adjust scale.");
             return;
+        }
 
         float scale = slider.value;
         vrm10Instance.gameObject.transform.localScale = new Vector3(scale, scale, scale);
+        Debug.Log($"VRM scale adjusted to: {scale}");
     }
 
     /// <summary>
@@ -318,6 +364,9 @@ public class VRMLoader : MonoBehaviour
     /// </summary>
     public void testcase()
     {
-        ReceiveVRMFilePath("C:/Users/ok122/Downloads/T_MSF_v0.93/T式マイティーストライクフリーダム_v0.93.vrm");
+        ReceiveVRMFilePath("C:/Users/ok122/Downloads/ba_hoshino_s (1)/ba_hoshino_s.vrm");
     }
+
+    // VRMがロードされたかどうかを示すフラグ
+    private bool vrmLoaded = false; // VRMがロードされたかどうか
 }

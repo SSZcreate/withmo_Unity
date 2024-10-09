@@ -313,6 +313,50 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!1 &148391514
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 148391516}
+  - component: {fileID: 148391515}
+  m_Layer: 0
+  m_Name: StatusBarController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &148391515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148391514}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75cded47a8201244e9ede4ffffc5fb89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &148391516
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 148391514}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.29252958, y: -1.7139287, z: 0.9071846}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &214220484 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -1728013695380148634, guid: 198296e1fbb2c134892d1e64def8c462,
@@ -344,8 +388,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   vrm: {fileID: 214220485}
-  animationRange: 6
-  randomAnimationInterval: 6
+  animationRange: 5
+  randomAnimationInterval: 1
+  touchAnimationStateName: TouchAnimation
+  idleStateName: Idle
+  touchParamName: Touch
+  cameraAnimator: {fileID: 4716247183719115238}
+  cameraTriggerParamName: CameraTrigger
 --- !u!114 &214220493
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -974,11 +1023,12 @@ MonoBehaviour:
   defo: {fileID: 214220484}
   slider: {fileID: 1080412936}
   animationRange: 6
-  randomAnimationInterval: 5
+  randomAnimationInterval: 1
   touchAnimationStateName: TouchAnimation
   idleStateName: Idle
   touchParamName: Touch
-  touchAnimationDuration: 2
+  cameraAnimator: {fileID: 4716247183719115238}
+  cameraTriggerParamName: CameraTrigger
 --- !u!4 &1280291580
 Transform:
   m_ObjectHideFlags: 0
@@ -2307,6 +2357,7 @@ GameObject:
   - component: {fileID: 2804839016691626394}
   - component: {fileID: 4716247183719115237}
   - component: {fileID: 2541912023097480023}
+  - component: {fileID: 4716247183719115238}
   m_Layer: 0
   m_Name: Camera
   m_TagString: Untagged
@@ -3008,6 +3059,27 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!95 &4716247183719115238
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 656225626604409089}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 97b36b509ddf31048aee1a6495576b30, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!23 &4862488535652724713
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3668,3 +3740,4 @@ SceneRoots:
   - {fileID: 118966954}
   - {fileID: 296699083}
   - {fileID: 4431558296139659654}
+  - {fileID: 148391516}

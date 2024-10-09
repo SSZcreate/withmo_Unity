@@ -20,6 +20,15 @@ public class SkyboxCycle : MonoBehaviour
     private int currentSkyboxIndex;
     private Coroutine fadeCoroutine;
 
+    public enum SkyboxMode
+    {
+        DayFixed,
+        NightFixed,
+        TimeBased
+    }
+
+    private SkyboxMode currentMode;
+
     void Start()
     {
         // スカイボックスとポストプロセスボリュームを配列に格納
@@ -34,6 +43,51 @@ public class SkyboxCycle : MonoBehaviour
         RenderSettings.skybox = skyboxes[currentSkyboxIndex];
         SetPostProcessWeights(currentSkyboxIndex, 1f); // 最初のボリュームをフルに適用
         RenderSettings.skybox.SetFloat("_Blend", 0f);  // スカイボックスのブレンドを0に設定
+
+        currentMode = SkyboxMode.TimeBased; // デフォルトで時間により変動モード
+    }
+
+    void Update()
+    {
+        if (currentMode == SkyboxMode.TimeBased)
+        {
+            // 時間により変動モードの処理を行う
+            DateTime currentTime = DateTime.Now;
+            int newSkyboxIndex = (currentTime.Hour >= 5 && currentTime.Hour < 16) ? 0 :
+                                 (currentTime.Hour >= 16 && currentTime.Hour < 19) ? 1 : 2;
+
+            if (newSkyboxIndex != currentSkyboxIndex)
+            {
+                NextSkybox(); // スカイボックスを切り替える
+            }
+        }
+    }
+
+    // 昼固定モードに設定する
+    public void SetDayFixedMode()
+    {
+        currentMode = SkyboxMode.DayFixed;
+        StopCurrentFade();
+        SetSkyboxAndPostProcess(0); // 0は昼のインデックス
+    }
+
+    // 夜固定モードに設定する
+    public void SetNightFixedMode()
+    {
+        currentMode = SkyboxMode.NightFixed;
+        StopCurrentFade();
+        SetSkyboxAndPostProcess(2); // 2は夜のインデックス
+    }
+
+    // 時間により変動するモードに設定する
+    public void SetTimeBasedMode()
+    {
+        currentMode = SkyboxMode.TimeBased;
+        StopCurrentFade();
+        DateTime currentTime = DateTime.Now;
+        SetInitialSkybox(currentTime);
+        RenderSettings.skybox = skyboxes[currentSkyboxIndex];
+        SetPostProcessWeights(currentSkyboxIndex, 1f);
     }
 
     // 時刻に基づいてスカイボックスを設定
@@ -41,7 +95,7 @@ public class SkyboxCycle : MonoBehaviour
     {
         if (currentTime.Hour >= 5 && currentTime.Hour < 16)
         {
-            currentSkyboxIndex = 0;  // 朝（昼）スカイボックス
+            currentSkyboxIndex = 0;  // 昼スカイボックス
         }
         else if (currentTime.Hour >= 16 && currentTime.Hour < 19)
         {
@@ -94,6 +148,24 @@ public class SkyboxCycle : MonoBehaviour
 
         // インデックスを更新
         currentSkyboxIndex = nextSkyboxIndex;
+    }
+
+    // 指定されたスカイボックスとポストプロセスを設定する
+    private void SetSkyboxAndPostProcess(int index)
+    {
+        RenderSettings.skybox = skyboxes[index];
+        RenderSettings.skybox.SetFloat("_Blend", 0f);
+        SetPostProcessWeights(index, 1f);
+    }
+
+    // 現在のフェード処理を停止する
+    private void StopCurrentFade()
+    {
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+            fadeCoroutine = null;
+        }
     }
 
     // 特定のインデックスに対応するポストプロセスボリュームの重みを設定する
