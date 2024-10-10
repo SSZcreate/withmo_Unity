@@ -41,6 +41,10 @@ public class VRMLoader : MonoBehaviour
     private string previousStateName = "";
     private string currentStateName = "";
 
+float touchDuration = 0f; // Tracks the duration of the touch
+float requiredHoldTime = 1f; // Required hold time in seconds (1 second)
+
+private bool isLoading = false; // VRMが読み込み中かどうか
     void Start()
     {
         // Animatorパラメータのハッシュを取得
@@ -178,24 +182,49 @@ public class VRMLoader : MonoBehaviour
         }
 
         // モバイルプラットフォーム向けのタッチ入力
-        if (Input.touchCount > 0)
+      if (Input.touchCount > 0)
+    {
+        Touch touch = Input.GetTouch(0);
+        Vector2 touchPosition = touch.position;
+
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+
+        // Condition for touch range (top half, left 80%)
+        bool isWithinValidRange = touchPosition.x <= screenWidth * 0.8f && touchPosition.y >= screenHeight * 0.5f;
+
+        if (isWithinValidRange)
         {
-            Touch touch = Input.GetTouch(0);
-            Vector2 touchPosition = touch.position;
-
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
-
-            // タッチ範囲の条件（上半分、左80%）
-            bool isWithinValidRange = touchPosition.x <= screenWidth * 0.8f && touchPosition.y >= screenHeight * 0.5f;
-
-            // 有効範囲内でタッチが開始された場合のみアニメーションをスキップ
-            if (isWithinValidRange && touch.phase == TouchPhase.Began)
+            if (touch.phase == TouchPhase.Began)
             {
-                Debug.Log("Touch input detected within valid range and state is Idle.");
-                ForceTransitionToTouchAnimation();
+                // Reset the touch duration timer when the touch begins
+                touchDuration = 0f;
+            }
+            else if (touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved)
+            {
+                // Increment the touch duration while the touch is stationary or moving
+                touchDuration += Time.deltaTime;
+
+                // Check if the touch duration meets the required hold time
+                if (touchDuration >= requiredHoldTime)
+                {
+                    Debug.Log("Touch input detected within valid range and state is Idle after holding for 1 second.");
+                    ForceTransitionToTouchAnimation();
+                    touchDuration = 0f; // Reset the touch duration after the transition
+                }
+            }
+            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            {
+                // Reset the touch duration if the touch ends or is canceled
+                touchDuration = 0f;
             }
         }
+        else
+        {
+            // Reset the touch duration if the touch is outside the valid range
+            touchDuration = 0f;
+        }
+    }
 
         // PCプラットフォーム向けのマウス入力（オプション）
         #if !UNITY_ANDROID && !UNITY_IOS
@@ -259,89 +288,101 @@ public class VRMLoader : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// VRMファイルのパスを受信してロードするメソッド
-    /// </summary>
-    /// <param name="path">VRMファイルのパス</param>
-    public async void ReceiveVRMFilePath(string path)
-    {   
-        // VRMが既にロードされていれば削除
-        if (vrmLoaded)
-        {
-            Destroy(vrm10Instance.gameObject);
-            vrmLoaded = false;
-            Debug.Log("Existing VRM instance destroyed.");
-        }
-
-        // デフォルトモデルの削除
-        if (defo != null)
-        {
-            Destroy(defo);
-            Debug.Log("Default model destroyed.");
-        }
-
-        // ロード画面を表示
-        if (kurukuru != null)
-        {
-            kurukuru.SetActive(true);
-            Debug.Log("Loading screen activated.");
-        }
-
-        // スライダーリセット
-        if (slider != null)
-        {
-            slider.value = 1;
-            Debug.Log("Slider reset to 1.");
-        }
-
-        try
-        {
-            // パスからVRMを非同期で読み込み
-            vrm10Instance = await Vrm10.LoadPathAsync(path);
-            Debug.Log($"VRM loaded from path: {path}");
-
-            // 読み込んだVRMインスタンスの位置を設定
-            vrm10Instance.gameObject.transform.position = Vector3.zero;
-            Debug.Log("VRM instance position set to Vector3.zero.");
-
-            // 表情操作
-            vrm10RuntimeExpression = vrm10Instance.Runtime.Expression;
-
-            // Animatorコンポーネントにアクセス
-            animator = vrm10Instance.GetComponent<Animator>();
-
-            if (animator == null)
-            {
-                Debug.LogError("AnimatorコンポーネントがVRMにアタッチされていません。");
-            }
-            else
-            {
-                // Animator Controllerを設定
-                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
-                Debug.Log("Animator Controller 'motion' loaded and assigned.");
-            }
-
-            // Facialをアタッチ
-            vrm10Instance.gameObject.AddComponent<Facial>();
-            Debug.Log("Facial component added to VRM instance.");
-        }
-        catch(System.Exception e)
-        {
-            // 例外処理
-            Debug.LogWarning($"Meshをアタッチしてください。 : {e}");
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-        }
-
-        // ロード画面を非表示
-        if (kurukuru != null)
-        {
-            kurukuru.SetActive(false);
-            Debug.Log("Loading screen deactivated.");
-        }
-
-        vrmLoaded = true; // VRMがロードされたことを示すフラグを設定
-        Debug.Log("VRM loaded flag set to true.");
+ /// <summary>
+/// VRMファイルのパスを受信してロードするメソッド
+/// </summary>
+/// <param name="path">VRMファイルのパス</param>
+public async void ReceiveVRMFilePath(string path)
+{
+    // 読み込み中の場合は処理をスキップ
+    if (isLoading)
+    {
+        Debug.LogWarning("VRM is currently loading. Please wait until the current loading process is complete.");
+        return;
     }
+
+    // 読み込み中フラグを設定
+    isLoading = true;
+
+    // 既存のVRMインスタンスがある場合は削除
+    if (vrm10Instance != null)
+    {
+        Destroy(vrm10Instance.gameObject);
+        vrm10Instance = null; // 参照をクリア
+        vrmLoaded = false; // ロード状態をリセット
+        Debug.Log("Existing VRM instance destroyed.");
+    }
+
+    // デフォルトモデルの削除
+    if (defo != null)
+    {
+        Destroy(defo);
+        Debug.Log("Default model destroyed.");
+    }
+
+    // ロード画面を表示
+    if (kurukuru != null)
+    {
+        kurukuru.SetActive(true);
+        Debug.Log("Loading screen activated.");
+    }
+
+    // スライダーリセット
+    if (slider != null)
+    {
+        slider.value = 1;
+        Debug.Log("Slider reset to 1.");
+    }
+
+    try
+    {
+        // パスからVRMを非同期で読み込み
+        vrm10Instance = await Vrm10.LoadPathAsync(path);
+        Debug.Log($"VRM loaded from path: {path}");
+
+        // 読み込んだVRMインスタンスの位置を設定
+        vrm10Instance.gameObject.transform.position = Vector3.zero;
+        Debug.Log("VRM instance position set to Vector3.zero.");
+
+        // 表情操作
+        vrm10RuntimeExpression = vrm10Instance.Runtime.Expression;
+
+        // Animatorコンポーネントにアクセス
+        animator = vrm10Instance.GetComponent<Animator>();
+
+        if (animator == null)
+        {
+            Debug.LogError("AnimatorコンポーネントがVRMにアタッチされていません。");
+        }
+        else
+        {
+            // Animator Controllerを設定
+            animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
+            Debug.Log("Animator Controller 'motion' loaded and assigned.");
+        }
+
+        // Facialをアタッチ
+        vrm10Instance.gameObject.AddComponent<Facial>();
+        Debug.Log("Facial component added to VRM instance.");
+    }
+    catch (System.Exception e)
+    {
+        // 例外処理
+        Debug.LogWarning($"Meshをアタッチしてください。 : {e}");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    // ロード画面を非表示
+    if (kurukuru != null)
+    {
+        kurukuru.SetActive(false);
+        Debug.Log("Loading screen deactivated.");
+    }
+
+    vrmLoaded = true; // VRMがロードされたことを示すフラグを設定
+    isLoading = false; // 読み込み中フラグをリセット
+    Debug.Log("VRM loaded flag set to true.");
+}
 
     /// <summary>
     /// スケールをスライダーで調整するメソッド

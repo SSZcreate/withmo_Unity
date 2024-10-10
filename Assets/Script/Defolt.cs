@@ -34,6 +34,9 @@ public class DefaultAnimationController : MonoBehaviour
     private string previousStateName = "";
     private string currentStateName = "";
 
+    float touchDuration = 0f; // Tracks the duration of the touch
+float requiredHoldTime = 1f; // Required hold time in seconds (1 second)
+
     void Start()
     {
         // VRMインスタンスが割り当てられているか確認
@@ -191,24 +194,48 @@ public class DefaultAnimationController : MonoBehaviour
 
         // モバイルプラットフォーム向けのタッチ入力
         if (Input.touchCount > 0)
+    {
+        Touch touch = Input.GetTouch(0);
+        Vector2 touchPosition = touch.position;
+
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+
+        // Condition for touch range (top half, left 80%)
+        bool isWithinValidRange = touchPosition.x <= screenWidth * 0.8f && touchPosition.y >= screenHeight * 0.5f;
+
+        if (isWithinValidRange)
         {
-            Touch touch = Input.GetTouch(0);
-            Vector2 touchPosition = touch.position;
-
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
-
-            // タッチ範囲の条件（上半分、左80%）
-            bool isWithinValidRange = touchPosition.x <= screenWidth * 0.8f && touchPosition.y >= screenHeight * 0.5f;
-
-            // 有効範囲内でタッチが開始された場合のみアニメーションをスキップ
-            if (isWithinValidRange && touch.phase == TouchPhase.Began)
+            if (touch.phase == TouchPhase.Began)
             {
-                Debug.Log("Touch input detected within valid range and state is Idle.");
-                ForceTransitionToTouchAnimation();
+                // Reset the touch duration timer when the touch begins
+                touchDuration = 0f;
+            }
+            else if (touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved)
+            {
+                // Increment the touch duration while the touch is stationary or moving
+                touchDuration += Time.deltaTime;
+
+                // Check if the touch duration meets the required hold time
+                if (touchDuration >= requiredHoldTime)
+                {
+                    Debug.Log("Touch input detected within valid range and state is Idle after holding for 1 second.");
+                    ForceTransitionToTouchAnimation();
+                    touchDuration = 0f; // Reset the touch duration after the transition
+                }
+            }
+            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
+            {
+                // Reset the touch duration if the touch ends or is canceled
+                touchDuration = 0f;
             }
         }
-
+        else
+        {
+            // Reset the touch duration if the touch is outside the valid range
+            touchDuration = 0f;
+        }
+    }
         // PCプラットフォーム向けのマウス入力（オプション）
         #if !UNITY_ANDROID && !UNITY_IOS
         if (Input.GetMouseButtonDown(0))
