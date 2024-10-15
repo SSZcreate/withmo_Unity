@@ -14,45 +14,44 @@ public class VRMLoader : MonoBehaviour
     public Slider slider;        // スケール調整用スライダー
 
     [Header("Animation Settings")]
-    [SerializeField] private int animationRange = 6; // アニメーション範囲（例：1～6）
-    [SerializeField] private float randomAnimationInterval = 5.0f; // ランダムアニメーションの間隔（秒）
-    [SerializeField] private string touchAnimationStateName = "TouchAnimation"; // タッチアニメーションステート名
-    [SerializeField] private string idleStateName = "Idle"; // Idleステート名
+    [SerializeField] private int animationRange = 6;
+    [SerializeField] private float randomAnimationInterval = 5.0f;
+    [SerializeField] private string touchAnimationStateName = "TouchAnimation";
+    [SerializeField] private string idleStateName = "Idle";
 
     [Header("Touch Animation Settings")]
-    [SerializeField] private string touchParamName = "Touch"; // Touchパラメータ名
+    [SerializeField] private string touchParamName = "Touch";
 
     [Header("Camera Settings")]
-    [SerializeField] private Animator cameraAnimator; // InspectorでカメラのAnimatorを割り当てる
-    [SerializeField] private string cameraTriggerParamName = "CameraTrigger"; // カメラアニメーション用のTriggerパラメータ名
+    [SerializeField] private Animator cameraAnimator;
+    [SerializeField] private string cameraTriggerParamName = "CameraTrigger";
 
     private Animator animator;
     private Vrm10RuntimeExpression vrm10RuntimeExpression;
     private Vrm10Instance vrm10Instance;
 
-    // Animator Controllerで設定したパラメータのハッシュ
-    private int touchParamHash;
-    private int randomParamHash;
+    // Animator パラメータのハッシュ
+    private static readonly int TouchParamHash = Animator.StringToHash("Touch");
+    private static readonly int RandomParamHash = Animator.StringToHash("random");
     private int cameraTriggerParamHash;
 
     private float randomAnimationTimer = 0f;
-
-    // 前回のアニメーションステートを保持する変数
     private string previousStateName = "";
     private string currentStateName = "";
 
-float touchDuration = 0f; // Tracks the duration of the touch
-float requiredHoldTime = 1f; // Required hold time in seconds (1 second)
+    private bool isLoading = false;
+    private bool vrmLoaded = false;
+    private bool canTriggerTouchAnimation = false; // 一度だけトリガーできるフラグ
 
-private bool isLoading = false; // VRMが読み込み中かどうか
+    [SerializeField] private float touchCooldown = 2.0f; // タッチ後のクールダウン時間（秒）
+    private bool isCooldown = false; // クールダウン中かどうかのフラグ
+
     void Start()
     {
-        // Animatorパラメータのハッシュを取得
-        touchParamHash = Animator.StringToHash(touchParamName);
-        randomParamHash = Animator.StringToHash("random");
+        // Animator パラメータのハッシュを初期化
         cameraTriggerParamHash = Animator.StringToHash(cameraTriggerParamName);
 
-        // デフォルトモデルが存在する場合は保持
+        // デフォルトモデルをアクティブにする
         if (defo != null)
         {
             defo.SetActive(true);
@@ -65,19 +64,18 @@ private bool isLoading = false; // VRMが読み込み中かどうか
     {
         if (animator != null)
         {
-            // 現在のアニメーションステートを取得
             AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(0);
             currentStateName = GetCurrentStateName(currentState);
 
-            // ステートが変更された場合のみ処理を行う
+            // ステートが変更された場合の処理
             if (currentStateName != previousStateName)
             {
-                Debug.Log($"Animation state changed from {previousStateName} to {currentStateName}");
-                HandleStateChange(currentStateName, currentState);
+                Debug.Log($"アニメーションステートが {previousStateName} から {currentStateName} に変更されました。");
+                HandleStateChange(currentStateName);
                 previousStateName = currentStateName;
             }
 
-            // ランダムアニメーションのタイマー更新
+            // Idle ステートでランダムアニメーションを実行
             if (currentStateName == "Idle")
             {
                 randomAnimationTimer += Time.deltaTime;
@@ -86,328 +84,266 @@ private bool isLoading = false; // VRMが読み込み中かどうか
                     TriggerRandomAnimation();
                     randomAnimationTimer = 0f;
                 }
+
+                // Idle に戻ったらタッチアニメーションが再度実行可能にする
+                canTriggerTouchAnimation = true;
             }
             else
             {
-                // Idleステートでない場合、ランダムアニメーションのタイマーをリセット
                 randomAnimationTimer = 0f;
             }
-
-            // タッチアニメーションをIdleステートのときだけ有効にする
-            HandleTouchInput(currentStateName);
         }
     }
 
     /// <summary>
-    /// 現在のアニメーションステート名を取得するメソッド
+    /// 現在のアニメーションステート名を取得します。
     /// </summary>
-    /// <param name="stateInfo">AnimatorStateInfo</param>
-    /// <returns>ステート名</returns>
+    /// <param name="stateInfo">現在のステート情報。</param>
+    /// <returns>ステート名の文字列。</returns>
     private string GetCurrentStateName(AnimatorStateInfo stateInfo)
     {
         if (stateInfo.IsName(touchAnimationStateName))
-        {
             return "TouchAnimation";
-        }
         else if (stateInfo.IsName(idleStateName))
-        {
             return "Idle";
-        }
         else
-        {
             return "Other";
-        }
     }
 
     /// <summary>
-    /// ステート変更時の処理を行うメソッド
+    /// ステートが変更された際の処理を行います。
     /// </summary>
-    /// <param name="currentStateName">現在のステート名</param>
-    /// <param name="currentState">AnimatorStateInfo</param>
-    private void HandleStateChange(string currentStateName, AnimatorStateInfo currentState)
+    /// <param name="currentStateName">新しいステート名。</param>
+    private void HandleStateChange(string currentStateName)
     {
         switch (currentStateName)
         {
             case "TouchAnimation":
-                Debug.Log("Touch animation started.");
+                Debug.Log("タッチアニメーションが開始されました。");
                 break;
 
             case "Idle":
-                // アニメーターが遷移中でないことを確認
                 if (!animator.IsInTransition(0))
-                {
                     ResetTouchAnimation();
-                }
-                break;
-
-            default:
-                // 他のステートに遷移した場合の処理（必要に応じて追加）
                 break;
         }
     }
 
     /// <summary>
-    /// ランダムアニメーションをトリガーするメソッド
+    /// ランダムアニメーションをトリガーします。
     /// </summary>
     private void TriggerRandomAnimation()
     {
         if (animator == null)
         {
-            Debug.LogWarning("Animator is null. Cannot trigger random animation.");
+            Debug.LogWarning("Animator が null のため、ランダムアニメーションをトリガーできません。");
             return;
         }
 
-        int randomAnim = Random.Range(1, animationRange + 1); // 1～animationRangeの範囲
-        animator.SetInteger(randomParamHash, randomAnim);
-        Debug.Log($"Random animation triggered: {randomAnim}");
+        int randomAnim = Random.Range(1, animationRange + 1);
+        animator.SetInteger(RandomParamHash, randomAnim);
+        Debug.Log($"ランダムアニメーション {randomAnim} をトリガーしました。");
     }
 
     /// <summary>
-    /// タッチ入力を処理するメソッド
-    /// タッチアニメーションはIdleステートのときだけ有効
+    /// タッチアニメーションをトリガーします。
     /// </summary>
-    /// <param name="currentStateName">現在のステート名</param>
-    private void HandleTouchInput(string currentStateName)
+    public void TriggerTouchAnimation()
     {
-        // 現在のステートがIdleでない場合、タッチアニメーションを無効にする
-        if (currentStateName != "Idle")
+        // タッチアニメーションをトリガーできるか確認
+        if (!canTriggerTouchAnimation || isCooldown)
         {
-            // もしタッチパラメータがtrueになっている場合、falseにリセット
-            if (animator.GetBool(touchParamHash))
-            {
-                animator.SetBool(touchParamHash, false);
-                Debug.Log("Current state is not Idle. Touch parameter reset to false.");
-            }
+            Debug.LogWarning("現在タッチアニメーションをトリガーできません。");
             return;
         }
 
-        // モバイルプラットフォーム向けのタッチ入力
-      if (Input.touchCount > 0)
-    {
-        Touch touch = Input.GetTouch(0);
-        Vector2 touchPosition = touch.position;
-
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-
-        // Condition for touch range (top half, left 80%)
-        bool isWithinValidRange = touchPosition.x <= screenWidth * 0.8f && touchPosition.y >= screenHeight * 0.5f;
-
-        if (isWithinValidRange)
+        if (animator == null)
         {
-            if (touch.phase == TouchPhase.Began)
-            {
-                // Reset the touch duration timer when the touch begins
-                touchDuration = 0f;
-            }
-            else if (touch.phase == TouchPhase.Stationary || touch.phase == TouchPhase.Moved)
-            {
-                // Increment the touch duration while the touch is stationary or moving
-                touchDuration += Time.deltaTime;
-
-                // Check if the touch duration meets the required hold time
-                if (touchDuration >= requiredHoldTime)
-                {
-                    Debug.Log("Touch input detected within valid range and state is Idle after holding for 1 second.");
-                    ForceTransitionToTouchAnimation();
-                    touchDuration = 0f; // Reset the touch duration after the transition
-                }
-            }
-            else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
-            {
-                // Reset the touch duration if the touch ends or is canceled
-                touchDuration = 0f;
-            }
+            Debug.LogWarning("Animator が null のため、タッチアニメーションをトリガーできません。");
+            return;
         }
-        else
-        {
-            // Reset the touch duration if the touch is outside the valid range
-            touchDuration = 0f;
-        }
-    }
 
-        // PCプラットフォーム向けのマウス入力（オプション）
-        #if !UNITY_ANDROID && !UNITY_IOS
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector2 mousePosition = Input.mousePosition;
-
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
-
-            bool isWithinValidRange = mousePosition.x <= screenWidth * 0.8f && mousePosition.y >= screenHeight * 0.5f;
-
-            if (isWithinValidRange)
-            {
-                Debug.Log("Mouse click detected within valid range and state is Idle.");
-                ForceTransitionToTouchAnimation();
-            }
-        }
-        #endif
-    }
-
-    /// <summary>
-    /// 現在のアニメーションを強制的にスキップし、Touchアニメーションに遷移させるメソッド
-    /// 同時にカメラアニメーションもトリガーします
-    /// </summary>
-    private void ForceTransitionToTouchAnimation()
-    {
-        // Touchパラメータをオンにする前に、現在のアニメーションをスキップ
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        int currentStateHash = stateInfo.fullPathHash;
 
-        // 現在のアニメーションを最終フレームにジャンプさせる
-        animator.Play(currentStateHash, 0, 1.0f); // レイヤー0、再生時間1（終わり）
-        Debug.Log("Current animation forced to its final frame.");
-
-        // Touchアニメーションを再生
-        animator.SetBool(touchParamHash, true); // Touch パラメータをオンにする
-        Debug.Log("Touch animation triggered.");
-
-        // カメラアニメーションをトリガー
-        if (cameraAnimator != null)
+        // Idle ステートの場合、アニメーションを最終フレームにスキップ
+        if (stateInfo.IsName(idleStateName))
         {
-            cameraAnimator.SetTrigger(cameraTriggerParamHash);
-            Debug.Log("Camera animation triggered.");
+            animator.Play(stateInfo.fullPathHash, 0, 1.0f);
+            Debug.Log("Idle アニメーションを最終フレームにスキップしました。");
+            // カメラアニメーションをトリガー
+            if (cameraAnimator != null)
+            {
+                cameraAnimator.SetTrigger(cameraTriggerParamHash);
+                Debug.Log("カメラアニメーションをトリガーしました。");
+            }
+            else
+            {
+                Debug.LogWarning("Camera Animator が割り当てられていません。");
+            }
+
+            // Bool を使用してタッチアニメーションを開始
+            animator.SetBool(TouchParamHash, true);
+            Debug.Log("タッチアニメーションをトリガーしました。");
+
         }
-        else
-        {
-            Debug.LogWarning("Camera Animator is not assigned. Cannot trigger camera animation.");
-        }
+
+        // タッチアニメーションを再度トリガーできないようにフラグを設定
+        canTriggerTouchAnimation = false;
+
+        // クールダウンを開始
+        StartCoroutine(StartCooldown());
     }
 
     /// <summary>
-    /// Touchアニメーションをリセットするメソッド
+    /// タッチアニメーションをリセットします。
     /// </summary>
     private void ResetTouchAnimation()
     {
         if (animator != null)
         {
-            animator.SetBool(touchParamHash, false);
-            Debug.Log("Touch parameter reset to false.");
+            animator.SetBool(TouchParamHash, false);
+            Debug.Log("タッチアニメーションをリセットしました。");
         }
     }
-
- /// <summary>
-/// VRMファイルのパスを受信してロードするメソッド
-/// </summary>
-/// <param name="path">VRMファイルのパス</param>
-public async void ReceiveVRMFilePath(string path)
-{
-    // 読み込み中の場合は処理をスキップ
-    if (isLoading)
-    {
-        Debug.LogWarning("VRM is currently loading. Please wait until the current loading process is complete.");
-        return;
-    }
-
-    // 読み込み中フラグを設定
-    isLoading = true;
-
-    // 既存のVRMインスタンスがある場合は削除
-    if (vrm10Instance != null)
-    {
-        Destroy(vrm10Instance.gameObject);
-        vrm10Instance = null; // 参照をクリア
-        vrmLoaded = false; // ロード状態をリセット
-        Debug.Log("Existing VRM instance destroyed.");
-    }
-
-    // デフォルトモデルの削除
-    if (defo != null)
-    {
-        Destroy(defo);
-        Debug.Log("Default model destroyed.");
-    }
-
-    // ロード画面を表示
-    if (kurukuru != null)
-    {
-        kurukuru.SetActive(true);
-        Debug.Log("Loading screen activated.");
-    }
-
-    // スライダーリセット
-    if (slider != null)
-    {
-        slider.value = 1;
-        Debug.Log("Slider reset to 1.");
-    }
-
-    try
-    {
-        // パスからVRMを非同期で読み込み
-        vrm10Instance = await Vrm10.LoadPathAsync(path);
-        Debug.Log($"VRM loaded from path: {path}");
-
-        // 読み込んだVRMインスタンスの位置を設定
-        vrm10Instance.gameObject.transform.position = Vector3.zero;
-        Debug.Log("VRM instance position set to Vector3.zero.");
-
-        // 表情操作
-        vrm10RuntimeExpression = vrm10Instance.Runtime.Expression;
-
-        // Animatorコンポーネントにアクセス
-        animator = vrm10Instance.GetComponent<Animator>();
-
-        if (animator == null)
-        {
-            Debug.LogError("AnimatorコンポーネントがVRMにアタッチされていません。");
-        }
-        else
-        {
-            // Animator Controllerを設定
-            animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
-            Debug.Log("Animator Controller 'motion' loaded and assigned.");
-        }
-
-        // Facialをアタッチ
-        vrm10Instance.gameObject.AddComponent<Facial>();
-        Debug.Log("Facial component added to VRM instance.");
-    }
-    catch (System.Exception e)
-    {
-        // 例外処理
-        Debug.LogWarning($"Meshをアタッチしてください。 : {e}");
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
-
-    // ロード画面を非表示
-    if (kurukuru != null)
-    {
-        kurukuru.SetActive(false);
-        Debug.Log("Loading screen deactivated.");
-    }
-
-    vrmLoaded = true; // VRMがロードされたことを示すフラグを設定
-    isLoading = false; // 読み込み中フラグをリセット
-    Debug.Log("VRM loaded flag set to true.");
-}
 
     /// <summary>
-    /// スケールをスライダーで調整するメソッド
+    /// クールダウン期間を開始します。
+    /// </summary>
+    /// <returns>IEnumerator コルーチン。</returns>
+    private IEnumerator StartCooldown()
+    {
+        isCooldown = true;
+        yield return new WaitForSeconds(touchCooldown);
+        isCooldown = false;
+        Debug.Log("クールダウンが終了しました。タッチアニメーションを再度トリガーできます。");
+    }
+
+    /// <summary>
+    /// VRMファイルのパスを受け取り、モデルをロードします。
+    /// </summary>
+    /// <param name="path">VRMファイルのパス。</param>
+    public async void ReceiveVRMFilePath(string path)
+    {
+        if (isLoading)
+        {
+            Debug.LogWarning("現在VRMをロード中です。しばらくお待ちください。");
+            return;
+        }
+
+        isLoading = true;
+
+        // 既存のVRMインスタンスを破棄
+        if (vrm10Instance != null)
+        {
+            Destroy(vrm10Instance.gameObject);
+            vrm10Instance = null;
+            vrmLoaded = false;
+            Debug.Log("既存のVRMインスタンスを破棄しました。");
+        }
+
+        // デフォルトモデルを破棄
+        if (defo != null)
+        {
+            Destroy(defo);
+            Debug.Log("デフォルトモデルを破棄しました。");
+        }
+
+        // ロード画面を表示
+        if (kurukuru != null)
+        {
+            kurukuru.SetActive(true);
+            Debug.Log("ロード画面を表示しました。");
+        }
+
+        // スライダーをリセット
+        if (slider != null)
+        {
+            slider.value = 1;
+            Debug.Log("スライダーをリセットしました。");
+        }
+
+        try
+        {
+            vrm10Instance = await Vrm10.LoadPathAsync(path);
+            Debug.Log($"パス {path} からVRMをロードしました。");
+
+            // ロードしたモデルの位置をリセット
+            vrm10Instance.gameObject.transform.position = Vector3.zero;
+
+            vrm10RuntimeExpression = vrm10Instance.Runtime.Expression;
+            animator = vrm10Instance.GetComponent<Animator>();
+
+            if (animator == null)
+            {
+                Debug.LogError("VRMインスタンスにAnimatorコンポーネントが見つかりません。");
+            }
+            else
+            {
+                // Animator Controllerを割り当て
+                var controller = Resources.Load<RuntimeAnimatorController>("motion");
+                if (controller != null)
+                {
+                    animator.runtimeAnimatorController = controller;
+                    Debug.Log("RuntimeAnimatorControllerをAnimatorに割り当てました。");
+                }
+                else
+                {
+                    Debug.LogError("Resources/motion からRuntimeAnimatorControllerのロードに失敗しました。");
+                }
+            }
+
+            // Facialコンポーネントを追加
+            vrm10Instance.gameObject.AddComponent<Facial>();
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning($"VRMのロード中に例外が発生しました: {e}");
+            // 現在のシーンを再読み込みして状態をリセット
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            return;
+        }
+
+        // ロード画面を非表示にする
+        if (kurukuru != null)
+        {
+            kurukuru.SetActive(false);
+            Debug.Log("ロード画面を非表示にしました。");
+        }
+
+        vrmLoaded = true;
+        isLoading = false;
+        Debug.Log("VRMのロードが完了しました。");
+    }
+
+    /// <summary>
+    /// ロードしたVRMモデルのスケールを調整します。
     /// </summary>
     public void ScaleAdjust()
-    {   
+    {
         if (!vrmLoaded || vrm10Instance == null)
         {
-            Debug.LogWarning("VRM not loaded or vrm10Instance is null. Cannot adjust scale.");
+            Debug.LogWarning("VRMがロードされていません。スケールを調整できません。");
             return;
         }
 
         float scale = slider.value;
         vrm10Instance.gameObject.transform.localScale = new Vector3(scale, scale, scale);
-        Debug.Log($"VRM scale adjusted to: {scale}");
+        Debug.Log($"VRMのスケールを {scale} に調整しました。");
     }
 
     /// <summary>
-    /// テスト用のメソッド
+    /// テストケースとして特定のVRMファイルをロードします。
     /// </summary>
-    public void testcase()
+    public void TestCase()
     {
         ReceiveVRMFilePath("C:/Users/ok122/Downloads/ba_hoshino_s (1)/ba_hoshino_s.vrm");
     }
 
-    // VRMがロードされたかどうかを示すフラグ
-    private bool vrmLoaded = false; // VRMがロードされたかどうか
+    /// <summary>
+    /// UIボタンからタッチアニメーションを手動でトリガーします。
+    /// </summary>
+    public void OnTouchButtonPressed()
+    {
+        TriggerTouchAnimation();
+    }
 }
