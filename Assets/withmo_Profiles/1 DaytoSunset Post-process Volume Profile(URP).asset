@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   active: 0
   temperature:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0
   tint:
     m_OverrideState: 0
@@ -326,19 +326,19 @@ MonoBehaviour:
     m_Value: 1
   threshold:
     m_OverrideState: 1
-    m_Value: 1.07
+    m_Value: 2
   intensity:
     m_OverrideState: 1
     m_Value: 0.45
   scatter:
     m_OverrideState: 1
-    m_Value: 0.797
+    m_Value: 0.517
   clamp:
     m_OverrideState: 0
     m_Value: 65472
   tint:
     m_OverrideState: 1
-    m_Value: {r: 0.8962264, g: 0.76665217, b: 0.6721698, a: 1}
+    m_Value: {r: 0.8962264, g: 0.84996706, b: 0.8173134, a: 1}
   highQualityFiltering:
     m_OverrideState: 0
     m_Value: 1
@@ -416,7 +416,7 @@ MonoBehaviour:
     m_Value: 0
   colorFilter:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_Value: {r: 0.9528302, g: 0.9528302, b: 0.9528302, a: 1}
   hueShift:
     m_OverrideState: 0
     m_Value: 0
@@ -453,13 +453,13 @@ MonoBehaviour:
     m_Value: 0
   focusDistance:
     m_OverrideState: 1
-    m_Value: 1.38
+    m_Value: 1.53
   aperture:
     m_OverrideState: 0
     m_Value: 6
   focalLength:
     m_OverrideState: 0
-    m_Value: 24
+    m_Value: 25
   bladeCount:
     m_OverrideState: 0
     m_Value: 5

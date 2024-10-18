@@ -29,8 +29,8 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _BackTex2:
         m_Texture: {fileID: 2800000, guid: e0542c8851c689547bb3a6f78e9b5845, type: 3}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
+        m_Scale: {x: 1, y: 1.25}
+        m_Offset: {x: 0, y: 0.14}
     - _DownTex:
         m_Texture: {fileID: 2800000, guid: 37fd5ccf0f532fe40844ebd4ff435df1, type: 3}
         m_Scale: {x: 1, y: 1}

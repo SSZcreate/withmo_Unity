@@ -14,14 +14,14 @@ public class DefaultAnimationController : MonoBehaviour
     [SerializeField] private string idleStateName = "Idle";
 
     [Header("Touch Animation Settings")]
-    [SerializeField] private string touchParamName = "Touch";
+    [SerializeField] private string touchTriggerParamName = "TouchTrigger"; // トリガー名に変更
 
     [Header("Camera Settings")]
     [SerializeField] private Animator cameraAnimator;
     [SerializeField] private string cameraTriggerParamName = "CameraTrigger";
 
     private Animator animator;
-    private static readonly int TouchParamHash = Animator.StringToHash("Touch");
+    private static readonly int TouchTriggerParamHash = Animator.StringToHash("TouchTrigger"); // トリガー用ハッシュ
     private int cameraTriggerParamHash;
 
     private float randomAnimationTimer = 0f;
@@ -41,7 +41,15 @@ public class DefaultAnimationController : MonoBehaviour
                 return;
             }
 
-            animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>("motion");
+            var controller = Resources.Load<RuntimeAnimatorController>("motion");
+            if (controller != null)
+            {
+                animator.runtimeAnimatorController = controller;
+            }
+            else
+            {
+                Debug.LogError("Resources/motion から RuntimeAnimatorController のロードに失敗しました。");
+            }
         }
         else
         {
@@ -86,9 +94,10 @@ public class DefaultAnimationController : MonoBehaviour
     /// </summary>
     public void TriggerTouchAnimation()
     {
+        // 現在のステートがIdleであるか、かつクールダウン中でないことを確認
         if (!canTriggerTouchAnimation || isCooldown)
         {
-            Debug.LogWarning("Touch animation is not available during cooldown.");
+            Debug.LogWarning("タッチアニメーションはクールダウン中のため利用できません。");
             return;
         }
 
@@ -98,22 +107,27 @@ public class DefaultAnimationController : MonoBehaviour
             return;
         }
 
-        // Idle ステートの時だけアニメーションをスキップしてタッチアニメーションを実行
+        // 現在のステートがIdleであることを確認
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if (stateInfo.IsName("Idle"))
+        if (!stateInfo.IsName(idleStateName))
         {
-            int currentStateHash = stateInfo.fullPathHash;
-            animator.Play(currentStateHash, 0, 1.0f); // 最終フレームへスキップ
-            Debug.Log("Idle animation forced to its final frame.");
-            if (cameraAnimator != null)
-            {
-                cameraAnimator.SetTrigger(cameraTriggerParamHash);
-                Debug.Log("Camera animation triggered.");
-            }
+            Debug.LogWarning("タッチアニメーションはIdleステートの時のみトリガーできます。");
+            return;
         }
 
-        animator.SetBool(TouchParamHash, true); // タッチアニメーションのトリガー
-        Debug.Log("Touch animation triggered.");
+        // Idle ステートの時だけアニメーションをスキップしてタッチアニメーションを実行
+        animator.Play(stateInfo.fullPathHash, 0, 1.0f); // 最終フレームへスキップ
+        Debug.Log("Idleアニメーションを最終フレームにスキップしました。");
+
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.SetTrigger(cameraTriggerParamHash);
+            Debug.Log("カメラアニメーションをトリガーしました。");
+        }
+
+        // トリガーを使用してタッチアニメーションを開始
+        animator.SetTrigger(TouchTriggerParamHash);
+        Debug.Log("タッチアニメーションをトリガーしました。");
 
         canTriggerTouchAnimation = false; // 一度実行後は無効化
         StartCoroutine(StartCooldown()); // クールダウン開始
@@ -122,9 +136,9 @@ public class DefaultAnimationController : MonoBehaviour
     private IEnumerator StartCooldown()
     {
         isCooldown = true; // クールダウン中に設定
-        yield return new WaitForSeconds(cooldownTime); // 2秒待機
+        yield return new WaitForSeconds(cooldownTime); // クールダウン時間待機
         isCooldown = false; // クールダウン解除
-        Debug.Log("Cooldown finished. Touch animation can be triggered again.");
+        Debug.Log("クールダウンが終了しました。タッチアニメーションを再度トリガーできます。");
     }
 
     /// <summary>
@@ -147,8 +161,8 @@ public class DefaultAnimationController : MonoBehaviour
     {
         if (animator != null)
         {
-            animator.SetBool(TouchParamHash, false);
-            Debug.Log("Touch animation reset.");
+            animator.ResetTrigger(TouchTriggerParamHash); // トリガーをリセット
+            Debug.Log("タッチアニメーションをリセットしました。");
         }
     }
 }

@@ -20,7 +20,7 @@ public class VRMLoader : MonoBehaviour
     [SerializeField] private string idleStateName = "Idle";
 
     [Header("Touch Animation Settings")]
-    [SerializeField] private string touchParamName = "Touch";
+    [SerializeField] private string touchTriggerParamName = "TouchTrigger"; // トリガー名に変更
 
     [Header("Camera Settings")]
     [SerializeField] private Animator cameraAnimator;
@@ -31,7 +31,7 @@ public class VRMLoader : MonoBehaviour
     private Vrm10Instance vrm10Instance;
 
     // Animator パラメータのハッシュ
-    private static readonly int TouchParamHash = Animator.StringToHash("Touch");
+    private static readonly int TouchTriggerParamHash = Animator.StringToHash("TouchTrigger");
     private static readonly int RandomParamHash = Animator.StringToHash("random");
     private int cameraTriggerParamHash;
 
@@ -147,10 +147,11 @@ public class VRMLoader : MonoBehaviour
 
     /// <summary>
     /// タッチアニメーションをトリガーします。
+    /// 現在のアニメーションステートが Idle の時のみ実行可能です。
     /// </summary>
     public void TriggerTouchAnimation()
     {
-        // タッチアニメーションをトリガーできるか確認
+        // クールダウン中またはトリガー不可の場合は処理を中断
         if (!canTriggerTouchAnimation || isCooldown)
         {
             Debug.LogWarning("現在タッチアニメーションをトリガーできません。");
@@ -163,29 +164,32 @@ public class VRMLoader : MonoBehaviour
             return;
         }
 
+        // 現在のステートが Idle であることを確認
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-
-        // Idle ステートの場合、アニメーションを最終フレームにスキップ
-        if (stateInfo.IsName(idleStateName))
+        if (!stateInfo.IsName(idleStateName))
         {
-            animator.Play(stateInfo.fullPathHash, 0, 1.0f);
-            Debug.Log("Idle アニメーションを最終フレームにスキップしました。");
-            // カメラアニメーションをトリガー
-            if (cameraAnimator != null)
-            {
-                cameraAnimator.SetTrigger(cameraTriggerParamHash);
-                Debug.Log("カメラアニメーションをトリガーしました。");
-            }
-            else
-            {
-                Debug.LogWarning("Camera Animator が割り当てられていません。");
-            }
-
-            // Bool を使用してタッチアニメーションを開始
-            animator.SetBool(TouchParamHash, true);
-            Debug.Log("タッチアニメーションをトリガーしました。");
-
+            Debug.LogWarning("タッチアニメーションは Idle ステートの時のみトリガーできます。");
+            return;
         }
+
+        // Idle ステートの時だけアニメーションを最終フレームにスキップしてタッチアニメーションを実行
+        animator.Play(stateInfo.fullPathHash, 0, 1.0f); // 最終フレームへスキップ
+        Debug.Log("Idle アニメーションを最終フレームにスキップしました。");
+
+        // カメラアニメーションをトリガー
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.SetTrigger(cameraTriggerParamHash);
+            Debug.Log("カメラアニメーションをトリガーしました。");
+        }
+        else
+        {
+            Debug.LogWarning("Camera Animator が割り当てられていません。");
+        }
+
+        // Trigger を使用してタッチアニメーションを開始
+        animator.SetTrigger(TouchTriggerParamHash);
+        Debug.Log("タッチアニメーションをトリガーしました。");
 
         // タッチアニメーションを再度トリガーできないようにフラグを設定
         canTriggerTouchAnimation = false;
@@ -201,7 +205,7 @@ public class VRMLoader : MonoBehaviour
     {
         if (animator != null)
         {
-            animator.SetBool(TouchParamHash, false);
+            animator.ResetTrigger(TouchTriggerParamHash); // トリガーをリセット
             Debug.Log("タッチアニメーションをリセットしました。");
         }
     }
@@ -212,9 +216,9 @@ public class VRMLoader : MonoBehaviour
     /// <returns>IEnumerator コルーチン。</returns>
     private IEnumerator StartCooldown()
     {
-        isCooldown = true;
-        yield return new WaitForSeconds(touchCooldown);
-        isCooldown = false;
+        isCooldown = true; // クールダウン中に設定
+        yield return new WaitForSeconds(touchCooldown); // クールダウン時間待機
+        isCooldown = false; // クールダウン解除
         Debug.Log("クールダウンが終了しました。タッチアニメーションを再度トリガーできます。");
     }
 
@@ -279,7 +283,7 @@ public class VRMLoader : MonoBehaviour
             }
             else
             {
-                // Animator Controllerを割り当て
+                // Animator Controller を割り当て
                 var controller = Resources.Load<RuntimeAnimatorController>("motion");
                 if (controller != null)
                 {
