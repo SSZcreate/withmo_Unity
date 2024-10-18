@@ -336,7 +336,7 @@ public class VRMLoader : MonoBehaviour
     /// </summary>
     public void TestCase()
     {
-        ReceiveVRMFilePath("C:/Users/ok122/Downloads/ba_hoshino_s (1)/ba_hoshino_s.vrm");
+        ReceiveVRMFilePath("C:/Users/ok122/Downloads/Subaru_FanmadeModel_MMD+VRM/VRM/Subaru_Hiyoko_inner.vrm");
     }
 
     /// <summary>
