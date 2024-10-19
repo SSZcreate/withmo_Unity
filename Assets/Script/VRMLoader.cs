@@ -1,3 +1,5 @@
+// VRMLoader.cs に必要な追加と修正を行います
+
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,6 +28,14 @@ public class VRMLoader : MonoBehaviour
     [SerializeField] private Animator cameraAnimator;
     [SerializeField] private string cameraTriggerParamName = "CameraTrigger";
 
+    [SerializeField] private string cameraExitStateName = "CameraExit"; // Exit用カメラアニメーション
+    [SerializeField] private string cameraEnterStateName = "CameraEnter"; // Enter用カメラアニメーション
+
+    [Header("Screen Transition Animation Settings")]
+    [SerializeField] private string exitScreenStateName = "ExitScreen"; 
+    [SerializeField] private string enterScreenStateName = "EnterScreen"; 
+
+
     private Animator animator;
     private Vrm10RuntimeExpression vrm10RuntimeExpression;
     private Vrm10Instance vrm10Instance;
@@ -45,6 +55,9 @@ public class VRMLoader : MonoBehaviour
 
     [SerializeField] private float touchCooldown = 2.0f; // タッチ後のクールダウン時間（秒）
     private bool isCooldown = false; // クールダウン中かどうかのフラグ
+
+    private bool isExitCooldown = false;
+    private bool isEnterCooldown = false;
 
     void Start()
     {
@@ -220,6 +233,82 @@ public class VRMLoader : MonoBehaviour
         yield return new WaitForSeconds(touchCooldown); // クールダウン時間待機
         isCooldown = false; // クールダウン解除
         Debug.Log("クールダウンが終了しました。タッチアニメーションを再度トリガーできます。");
+    }
+
+     public void TriggerExitScreenAnimation()
+    {
+        if (animator == null)
+        {
+            //Debug.LogError("Animatorが見つかりません。");
+            return;
+        }
+
+        animator.Play(exitScreenStateName);
+        Debug.Log("ExitScreenアニメーションがトリガーされました。");
+
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.Play(cameraExitStateName);
+            Debug.Log("CameraExitアニメーションが再生されました。");
+        }
+    }
+
+    public void TriggerEnterScreenAnimation()
+    {
+        if (animator == null)
+        {
+            //Debug.LogError("Animatorが見つかりません。");
+            return;
+        }
+
+        animator.Play(enterScreenStateName);
+        Debug.Log("EnterScreenアニメーションがトリガーされました。");
+
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.Play(cameraEnterStateName);
+            Debug.Log("CameraEnterアニメーションが再生されました。");
+        }
+    }
+
+    public void StartExitProcess()
+    {
+        if (isExitCooldown)
+        {
+            Debug.LogWarning("ExitScreenアニメーションはクールダウン中です。");
+            return;
+        }
+
+        TriggerExitScreenAnimation();
+        StartCoroutine(StartExitCooldown());
+    }
+
+    public void StartEnterProcess()
+    {
+        if (isEnterCooldown)
+        {
+            Debug.LogWarning("EnterScreenアニメーションはクールダウン中です。");
+            return;
+        }
+
+        TriggerEnterScreenAnimation();
+        StartCoroutine(StartEnterCooldown());
+    }
+
+    private IEnumerator StartExitCooldown()
+    {
+        isExitCooldown = true;
+        yield return new WaitForSeconds(1.0f); 
+        isExitCooldown = false;
+        Debug.Log("ExitScreenアニメーションのクールダウンが終了しました。");
+    }
+
+    private IEnumerator StartEnterCooldown()
+    {
+        isEnterCooldown = true;
+        yield return new WaitForSeconds(1.0f); 
+        isEnterCooldown = false;
+        Debug.Log("EnterScreenアニメーションのクールダウンが終了しました。");
     }
 
     /// <summary>

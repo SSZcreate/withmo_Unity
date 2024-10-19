@@ -14,21 +14,27 @@ public class DefaultAnimationController : MonoBehaviour
     [SerializeField] private string idleStateName = "Idle";
 
     [Header("Touch Animation Settings")]
-    [SerializeField] private string touchTriggerParamName = "TouchTrigger"; // トリガー名に変更
+    [SerializeField] private string touchTriggerParamName = "TouchTrigger";
 
     [Header("Camera Settings")]
     [SerializeField] private Animator cameraAnimator;
-    [SerializeField] private string cameraTriggerParamName = "CameraTrigger";
+    [SerializeField] private string cameraExitStateName = "CameraExit"; // Exit用カメラアニメーション
+    [SerializeField] private string cameraEnterStateName = "CameraEnter"; // Enter用カメラアニメーション
+
+    [Header("Screen Transition Animation Settings")]
+    [SerializeField] private string exitScreenStateName = "ExitScreen"; 
+    [SerializeField] private string enterScreenStateName = "EnterScreen"; 
 
     private Animator animator;
-    private static readonly int TouchTriggerParamHash = Animator.StringToHash("TouchTrigger"); // トリガー用ハッシュ
-    private int cameraTriggerParamHash;
+    private static readonly int TouchTriggerParamHash = Animator.StringToHash("TouchTrigger");
 
     private float randomAnimationTimer = 0f;
-    private bool canTriggerTouchAnimation = false; // タッチアニメーションを一度だけ許可するフラグ
+    private bool canTriggerTouchAnimation = false;
 
-    [SerializeField] private float cooldownTime = 2.0f; // タッチ後のクールダウン時間（秒）
-    private bool isCooldown = false; // クールダウン中かどうかのフラグ
+    [SerializeField] private float cooldownTime = 2.0f;
+    private bool isCooldown = false;
+    private bool isExitCooldown = false;
+    private bool isEnterCooldown = false;
 
     void Start()
     {
@@ -56,11 +62,7 @@ public class DefaultAnimationController : MonoBehaviour
             Debug.LogError("VRMインスタンスが割り当てられていません。");
         }
 
-        if (cameraAnimator != null)
-        {
-            cameraTriggerParamHash = Animator.StringToHash(cameraTriggerParamName);
-        }
-        else
+        if (cameraAnimator == null)
         {
             Debug.LogError("Camera Animatorが割り当てられていません。");
         }
@@ -80,7 +82,7 @@ public class DefaultAnimationController : MonoBehaviour
                     randomAnimationTimer = 0f;
                 }
 
-                canTriggerTouchAnimation = true; // Idleに戻ったら再度タッチアニメーションが可能に
+                canTriggerTouchAnimation = true;
             }
             else
             {
@@ -89,12 +91,8 @@ public class DefaultAnimationController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// タッチアニメーションをIdleステートから遷移させる
-    /// </summary>
     public void TriggerTouchAnimation()
     {
-        // 現在のステートがIdleであるか、かつクールダウン中でないことを確認
         if (!canTriggerTouchAnimation || isCooldown)
         {
             Debug.LogWarning("タッチアニメーションはクールダウン中のため利用できません。");
@@ -107,7 +105,6 @@ public class DefaultAnimationController : MonoBehaviour
             return;
         }
 
-        // 現在のステートがIdleであることを確認
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
         if (!stateInfo.IsName(idleStateName))
         {
@@ -115,54 +112,115 @@ public class DefaultAnimationController : MonoBehaviour
             return;
         }
 
-        // Idle ステートの時だけアニメーションをスキップしてタッチアニメーションを実行
-        animator.Play(stateInfo.fullPathHash, 0, 1.0f); // 最終フレームへスキップ
+        animator.Play(stateInfo.fullPathHash, 0, 1.0f);
         Debug.Log("Idleアニメーションを最終フレームにスキップしました。");
 
-        if (cameraAnimator != null)
-        {
-            cameraAnimator.SetTrigger(cameraTriggerParamHash);
-            Debug.Log("カメラアニメーションをトリガーしました。");
-        }
-
-        // トリガーを使用してタッチアニメーションを開始
         animator.SetTrigger(TouchTriggerParamHash);
         Debug.Log("タッチアニメーションをトリガーしました。");
 
-        canTriggerTouchAnimation = false; // 一度実行後は無効化
-        StartCoroutine(StartCooldown()); // クールダウン開始
+        canTriggerTouchAnimation = false;
+        StartCoroutine(StartCooldown());
     }
 
     private IEnumerator StartCooldown()
     {
-        isCooldown = true; // クールダウン中に設定
-        yield return new WaitForSeconds(cooldownTime); // クールダウン時間待機
-        isCooldown = false; // クールダウン解除
+        isCooldown = true;
+        yield return new WaitForSeconds(cooldownTime);
+        isCooldown = false;
         Debug.Log("クールダウンが終了しました。タッチアニメーションを再度トリガーできます。");
     }
 
-    /// <summary>
-    /// ランダムアニメーションをトリガーする
-    /// </summary>
     private void TriggerRandomAnimation()
     {
         if (animator != null)
         {
             int randomAnim = Random.Range(1, animationRange + 1);
             animator.SetInteger("random", randomAnim);
-            //Debug.Log($"Random animation triggered: {randomAnim}");
         }
     }
 
-    /// <summary>
-    /// タッチアニメーションをリセットする
-    /// </summary>
     public void ResetTouchAnimation()
     {
         if (animator != null)
         {
-            animator.ResetTrigger(TouchTriggerParamHash); // トリガーをリセット
+            animator.ResetTrigger(TouchTriggerParamHash);
             Debug.Log("タッチアニメーションをリセットしました。");
         }
+    }
+
+    public void TriggerExitScreenAnimation()
+    {
+        if (animator == null)
+        {
+            Debug.LogError("Animatorが見つかりません。");
+            return;
+        }
+
+        animator.Play(exitScreenStateName);
+        Debug.Log("ExitScreenアニメーションがトリガーされました。");
+
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.Play(cameraExitStateName);
+            Debug.Log("CameraExitアニメーションが再生されました。");
+        }
+    }
+
+    public void TriggerEnterScreenAnimation()
+    {
+        if (animator == null)
+        {
+            //Debug.LogError("Animatorが見つかりません。");
+            return;
+        }
+
+        animator.Play(enterScreenStateName);
+        Debug.Log("EnterScreenアニメーションがトリガーされました。");
+
+        if (cameraAnimator != null)
+        {
+            cameraAnimator.Play(cameraEnterStateName);
+            Debug.Log("CameraEnterアニメーションが再生されました。");
+        }
+    }
+
+    public void StartExitProcess()
+    {
+        if (isExitCooldown)
+        {
+            Debug.LogWarning("ExitScreenアニメーションはクールダウン中です。");
+            return;
+        }
+
+        TriggerExitScreenAnimation();
+        StartCoroutine(StartExitCooldown());
+    }
+
+    public void StartEnterProcess()
+    {
+        if (isEnterCooldown)
+        {
+            Debug.LogWarning("EnterScreenアニメーションはクールダウン中です。");
+            return;
+        }
+
+        TriggerEnterScreenAnimation();
+        StartCoroutine(StartEnterCooldown());
+    }
+
+    private IEnumerator StartExitCooldown()
+    {
+        isExitCooldown = true;
+        yield return new WaitForSeconds(1.0f); 
+        isExitCooldown = false;
+        Debug.Log("ExitScreenアニメーションのクールダウンが終了しました。");
+    }
+
+    private IEnumerator StartEnterCooldown()
+    {
+        isEnterCooldown = true;
+        yield return new WaitForSeconds(1.0f); 
+        isEnterCooldown = false;
+        Debug.Log("EnterScreenアニメーションのクールダウンが終了しました。");
     }
 }
