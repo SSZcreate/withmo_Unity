@@ -20,6 +20,7 @@ public class DefaultAnimationController : MonoBehaviour
     [SerializeField] private Animator cameraAnimator;
     [SerializeField] private string cameraExitStateName = "CameraExit"; // Exit用カメラアニメーション
     [SerializeField] private string cameraEnterStateName = "CameraEnter"; // Enter用カメラアニメーション
+    [SerializeField] private string cameraTouchStateName = "Touchcamera"; // Enter用カメラアニメーション
 
     [Header("Screen Transition Animation Settings")]
     [SerializeField] private string exitScreenStateName = "ExitScreen"; 
@@ -118,6 +119,8 @@ public class DefaultAnimationController : MonoBehaviour
         animator.SetTrigger(TouchTriggerParamHash);
         Debug.Log("タッチアニメーションをトリガーしました。");
 
+        cameraAnimator.Play(cameraTouchStateName);
+        Debug.Log("カメラタッチアニメーションをトリガーしました。");
         canTriggerTouchAnimation = false;
         StartCoroutine(StartCooldown());
     }
