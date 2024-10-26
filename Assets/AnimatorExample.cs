@@ -8,23 +8,28 @@ public class AnimatorExample : MonoBehaviour
 
     [SerializeField]
     private Transform _lookTarget;
-    //[SerializeField]
-    //private Transform _leftHandIkTarget;
     [SerializeField, Range(0, 1)]
     private float _ikWeight;
+    private void Start()
+    {
+        // "Lookat"という名前のオブジェクトを探して_targetにセット
+        GameObject lookAtObject = GameObject.Find("Lookat");
+        if (lookAtObject != null)
+        {
+            _lookTarget = lookAtObject.transform;
+        }
+        else
+        {
+            Debug.LogWarning("Lookat object not found!");
+        }
+    }
 
     private void OnAnimatorIK(int layerIndex)
     {
-        if (_lookTarget != null) {
+            if (_lookTarget != null) {
             Animator.SetLookAtWeight(_ikWeight);
             Animator.SetLookAtPosition(_lookTarget.position);
         }
 
-        // if (_leftHandIkTarget != null) {
-        //     Animator.SetIKPositionWeight(AvatarIKGoal.LeftHand, _ikWeight);
-        //     Animator.SetIKRotationWeight(AvatarIKGoal.LeftHand, _ikWeight);
-        //     Animator.SetIKPosition(AvatarIKGoal.LeftHand, _leftHandIkTarget.position);
-        //     Animator.SetIKRotation(AvatarIKGoal.LeftHand, _leftHandIkTarget.rotation);
-        // }
     }
 }

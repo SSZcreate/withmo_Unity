@@ -32,6 +32,8 @@ public class DefaultAnimationController : MonoBehaviour
     private float randomAnimationTimer = 0f;
     private bool canTriggerTouchAnimation = false;
 
+    public bool canmove = false;
+
     [SerializeField] private float cooldownTime = 2.0f;
     private bool isCooldown = false;
     private bool isExitCooldown = false;
@@ -82,12 +84,13 @@ public class DefaultAnimationController : MonoBehaviour
                     TriggerRandomAnimation();
                     randomAnimationTimer = 0f;
                 }
-
+                canmove = true;
                 canTriggerTouchAnimation = true;
             }
             else
             {
                 randomAnimationTimer = 0f;
+                canmove = false;
             }
         }
     }

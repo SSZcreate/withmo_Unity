@@ -50,14 +50,17 @@ public class VRMLoader : MonoBehaviour
     private string currentStateName = "";
 
     private bool isLoading = false;
-    private bool vrmLoaded = false;
+    public bool vrmLoaded = false;
     private bool canTriggerTouchAnimation = false; // 一度だけトリガーできるフラグ
+    public bool canmove = false;
 
     [SerializeField] private float touchCooldown = 2.0f; // タッチ後のクールダウン時間（秒）
     private bool isCooldown = false; // クールダウン中かどうかのフラグ
 
     private bool isExitCooldown = false;
     private bool isEnterCooldown = false;
+
+    private bool isIdle = false;
 
 
     void Start()
@@ -91,7 +94,7 @@ public class VRMLoader : MonoBehaviour
 
             // Idle ステートでランダムアニメーションを実行
             if (currentStateName == "Idle")
-            {
+            {   
                 randomAnimationTimer += Time.deltaTime;
                 if (randomAnimationTimer >= randomAnimationInterval)
                 {
@@ -100,11 +103,13 @@ public class VRMLoader : MonoBehaviour
                 }
 
                 // Idle に戻ったらタッチアニメーションが再度実行可能にする
+                canmove = true;
                 canTriggerTouchAnimation = true;
             }
             else
             {
                 randomAnimationTimer = 0f;
+                canmove = false;
             }
         }
     }
@@ -388,6 +393,7 @@ public class VRMLoader : MonoBehaviour
 
             // Facialコンポーネントを追加
             vrm10Instance.gameObject.AddComponent<Facial>();
+            vrm10Instance.gameObject.AddComponent<AnimatorExample>();
         }
         catch (System.Exception e)
         {

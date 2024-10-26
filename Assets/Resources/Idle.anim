@@ -63415,7 +63415,8 @@ AnimationClip:
   - time: 7.3333335
     functionName: BlinkOpen
     data: 
-    objectReferenceParameter: {fileID: 0}
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
