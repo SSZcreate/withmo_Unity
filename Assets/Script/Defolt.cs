@@ -158,7 +158,7 @@ public class DefaultAnimationController : MonoBehaviour
     {
         if (animator == null)
         {
-            Debug.LogError("Animatorが見つかりません。");
+            Debug.Log("Animatorが見つかりません。");
             return;
         }
 

@@ -13,21 +13,51 @@ public class AnimationController : MonoBehaviour
     [Header("Animator Example")]
     [SerializeField] private AnimatorExample animatorExample; // AnimatorExample への参照
 
-    [Header("IK Animation Settings")]
-    [SerializeField, Tooltip("IK ウェイトのフェードイン持続時間（秒）")]
-    private float ikFadeInDuration = 1f; // フェードインの持続時間
+    [Header("MoveLookat Settings")]
+    [SerializeField, Tooltip("移動にかける時間（秒）")]
+    private float moveDuration = 1f;
 
-    [SerializeField, Tooltip("IK ウェイトの保持持続時間（秒）")]
-    private float ikHoldDuration = 1f; // 保持の持続時間
+    [SerializeField, Tooltip("移動後にその位置にとどまる時間（秒）")]
+    private float holdDuration = 1f;
 
-    [SerializeField, Tooltip("IK ウェイトのフェードアウト持続時間（秒）")]
-    private float ikFadeOutDuration = 1f; // フェードアウトの持続時間
+    [SerializeField, Tooltip("戻る際の参照オブジェクト")]
+    private GameObject referenceObject;
 
+    [Header("IK Weight Settings")]
+    [SerializeField, Tooltip("IKウェイトのフェードにかける時間（秒）")]
+    private float ikFadeDuration = 0.5f;
+
+    // リフレクション用のFieldInfoをキャッシュ
+    private FieldInfo ikWeightFieldInfo;
+
+    // IKウェイトのコルーチンを管理するための参照
     private Coroutine ikWeightCoroutine;
 
-    // vrmLoaded の状態を追跡
+    // 移動中かどうかを判定するフラグ
+    private bool isMoving = false;
+
+    // VRMLoader のロード状態を追跡
     private bool previousVrmLoaded = false;
     private bool _vrmload = false;
+
+    /// <summary>
+    /// Unity の Awake メソッドでリフレクションを初期化します。
+    /// </summary>
+    private void Awake()
+    {
+        if (animatorExample != null)
+        {
+            ikWeightFieldInfo = typeof(AnimatorExample).GetField("_ikWeight", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (ikWeightFieldInfo == null)
+            {
+                Debug.LogError("AnimatorExample クラス内に '_ikWeight' フィールドが見つかりません。");
+            }
+        }
+        else
+        {
+            Debug.LogError("AnimatorExample がアサインされていません。");
+        }
+    }
 
     /// <summary>
     /// Unity の Update メソッドで vrmLoaded の変化を監視します。
@@ -67,11 +97,11 @@ public class AnimationController : MonoBehaviour
                 animatorExample = newAnimatorExample;
                 Debug.Log("AnimatorExample が正常に設定されました。");
 
-                // 既存の IK ウェイトアニメーションのコルーチンを停止
-                if (ikWeightCoroutine != null)
+                // リフレクションを再初期化
+                ikWeightFieldInfo = typeof(AnimatorExample).GetField("_ikWeight", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (ikWeightFieldInfo == null)
                 {
-                    StopCoroutine(ikWeightCoroutine);
-                    ikWeightCoroutine = null;
+                    Debug.LogError("AnimatorExample クラス内に '_ikWeight' フィールドが見つかりません。");
                 }
             }
             else
@@ -86,12 +116,19 @@ public class AnimationController : MonoBehaviour
     }
 
     /// <summary>
-    /// オブジェクトを指定された比率に基づいて移動し、_ikWeight をアニメーションさせる関数。
+    /// オブジェクトを指定された比率に基づいて移動し、指定された秒数で移動し、その位置に指定された時間とどまり、指定オブジェクトの同じx,yポジションに戻ります。
     /// </summary>
     /// <param name="ratioString">"x,y" 形式の文字列 (例: "0.45,0.31")</param>
     public void MoveLookat(string ratioString)
     {
-        // VRMLoaderのcanTriggerTouchAnimationがtrueかチェック
+        // 既に移動中の場合は無視
+        if (isMoving)
+        {
+            Debug.LogWarning("現在移動中のため、MoveLookat 呼び出しは無視されました。");
+            return;
+        }
+
+        // VRMLoaderのcanmoveがtrueかチェック
         if (vrmLoader == null)
         {
             Debug.LogError("VRMLoader の参照が AnimationController に設定されていません。");
@@ -102,7 +139,8 @@ public class AnimationController : MonoBehaviour
         {
             if (!defaultAnimationController.canmove)
             {
-                Debug.LogWarning("MoveObject を呼び出す条件が満たされていません。canTriggerTouchAnimation が false です。");
+                Debug.LogWarning("MoveLookat を呼び出す条件が満たされていません。canmove が false です。");
+                SmoothSetIKWeight(0f, ikFadeDuration);
                 return;
             }
         }
@@ -110,7 +148,8 @@ public class AnimationController : MonoBehaviour
         {
             if (!vrmLoader.canmove)
             {
-                Debug.LogWarning("MoveObject を呼び出す条件が満たされていません。canTriggerTouchAnimation が false です。");
+                Debug.LogWarning("MoveLookat を呼び出す条件が満たされていません。canmove が false です。");
+                SmoothSetIKWeight(0f, ikFadeDuration);
                 return;
             }
         }
@@ -127,22 +166,30 @@ public class AnimationController : MonoBehaviour
         // 文字列を float に変換
         if (float.TryParse(values[0], out float xRatio) && float.TryParse(values[1], out float yRatio))
         {
-            // ビューポート座標を計算（左上が (0,0)、右下が (1,1) となるように y を反転）
-            Vector3 viewportPosition = new Vector3(xRatio, 1 - yRatio, Camera.main.WorldToViewportPoint(targetObject.transform.position).z);
+            // ビューポート座標を計算（左下が (0,0)、右上が (1,1)）
+            Vector3 viewportPosition = new Vector3(xRatio, yRatio, Camera.main.WorldToViewportPoint(targetObject.transform.position).z);
 
             // ビューポート座標をワールド座標に変換
-            Vector3 worldPosition = Camera.main.ViewportToWorldPoint(viewportPosition);
+            Vector3 targetPosition = Camera.main.ViewportToWorldPoint(viewportPosition);
 
-            // オブジェクトの位置を更新
-            targetObject.transform.position = worldPosition;
+            // 現在の位置を保存
+            Vector3 originalPosition = targetObject.transform.position;
 
-            // 既存のコルーチンがあれば停止
-            if (ikWeightCoroutine != null)
+            // 参照オブジェクトが指定されていない場合はエラーログを出す
+            if (referenceObject == null)
             {
-                StopCoroutine(ikWeightCoroutine);
+                Debug.LogError("ReferenceObject が指定されていません。");
+                return;
             }
-            // IK ウェイトアニメーションのコルーチンを開始
-            ikWeightCoroutine = StartCoroutine(AnimateIKWeight(ikFadeInDuration, ikHoldDuration, ikFadeOutDuration));
+
+            // IKウェイトを1に滑らかに変更
+            SmoothSetIKWeight(1f, ikFadeDuration);
+
+            // 移動中フラグを立てる
+            isMoving = true;
+
+            // コルーチンを開始
+            StartCoroutine(MoveAndHold(targetObject, originalPosition, targetPosition, moveDuration, holdDuration, referenceObject));
         }
         else
         {
@@ -151,52 +198,102 @@ public class AnimationController : MonoBehaviour
     }
 
     /// <summary>
-    /// _ikWeight を 0 から 1 へフェードインし、1 を一定時間保持し、1 から 0 へフェードアウトさせるコルーチン。
+    /// IKウェイトを滑らかに変更するメソッド
     /// </summary>
-    /// <param name="fadeIn">フェードインの持続時間（秒）</param>
-    /// <param name="hold">保持の持続時間（秒）</param>
-    /// <param name="fadeOut">フェードアウトの持続時間（秒）</param>
-    private IEnumerator AnimateIKWeight(float fadeIn, float hold, float fadeOut)
+    /// <param name="targetWeight">目標とするIKウェイトの値（0～1）</param>
+    /// <param name="duration">変更にかける時間（秒）</param>
+    private void SmoothSetIKWeight(float targetWeight, float duration)
     {
         if (animatorExample == null)
         {
             Debug.LogError("AnimatorExample reference is not set.");
-            yield break;
+            return;
         }
 
-        // Reflection を使ってプライベートフィールド _ikWeight にアクセス
-        FieldInfo ikWeightField = typeof(AnimatorExample).GetField("_ikWeight", BindingFlags.NonPublic | BindingFlags.Instance);
-
-        if (ikWeightField == null)
+        if (ikWeightFieldInfo == null)
         {
-            Debug.LogError("Failed to find _ikWeight field in AnimatorExample.");
-            yield break;
+            Debug.LogError("IKWeightFieldInfo is not initialized.");
+            return;
         }
 
-        // フェードイン: 0 → 1
-        float elapsed = 0f;
-        while (elapsed < fadeIn)
+        // 既存のコルーチンがあれば停止
+        if (ikWeightCoroutine != null)
         {
-            float value = Mathf.Lerp(0f, 1f, elapsed / fadeIn);
-            ikWeightField.SetValue(animatorExample, value);
-            elapsed += Time.deltaTime;
+            StopCoroutine(ikWeightCoroutine);
+        }
+
+        // コルーチンを開始
+        ikWeightCoroutine = StartCoroutine(FadeIKWeight(targetWeight, duration));
+    }
+
+    /// <summary>
+    /// IKウェイトを滑らかにフェードさせるコルーチン
+    /// </summary>
+    /// <param name="targetWeight">目標とするIKウェイトの値（0～1）</param>
+    /// <param name="duration">フェードにかける時間（秒）</param>
+    /// <returns></returns>
+    private IEnumerator FadeIKWeight(float targetWeight, float duration)
+    {
+        float elapsedTime = 0f;
+
+        // 現在のIKウェイトの値を取得
+        float currentWeight = (float)ikWeightFieldInfo.GetValue(animatorExample);
+
+        while (elapsedTime < duration)
+        {
+            float newWeight = Mathf.Lerp(currentWeight, targetWeight, elapsedTime / duration);
+            ikWeightFieldInfo.SetValue(animatorExample, newWeight);
+            elapsedTime += Time.deltaTime;
             yield return null;
         }
-        ikWeightField.SetValue(animatorExample, 1f);
 
-        // 1 を保持
-        yield return new WaitForSeconds(hold);
+        // 最終的な値を設定
+        ikWeightFieldInfo.SetValue(animatorExample, targetWeight);
+        ikWeightCoroutine = null;
+    }
 
-        // フェードアウト: 1 → 0
-        elapsed = 0f;
-        while (elapsed < fadeOut)
+    /// <summary>
+    /// ターゲットオブジェクトを指定された位置に移動し、指定時間保持後に参照オブジェクトのx,yポジションに戻ります。
+    /// </summary>
+    /// <param name="obj">移動対象のオブジェクト</param>
+    /// <param name="originalPosition">元の位置</param>
+    /// <param name="targetPosition">移動先の位置</param>
+    /// <param name="moveDuration">移動にかける時間（秒）</param>
+    /// <param name="holdDuration">その位置にとどまる時間（秒）</param>
+    /// <param name="referenceObject">戻る際の参照オブジェクト</param>
+    /// <returns></returns>
+    private IEnumerator MoveAndHold(GameObject obj, Vector3 originalPosition, Vector3 targetPosition, float moveDuration, float holdDuration, GameObject referenceObject)
+    {
+        float elapsedTime = 0f;
+
+        // 移動処理: 現在の位置からターゲット位置へ
+        while (elapsedTime < moveDuration)
         {
-            float value = Mathf.Lerp(1f, 0f, elapsed / fadeOut);
-            ikWeightField.SetValue(animatorExample, value);
-            elapsed += Time.deltaTime;
+            obj.transform.position = Vector3.Lerp(originalPosition, targetPosition, elapsedTime / moveDuration);
+            elapsedTime += Time.deltaTime;
             yield return null;
         }
-        ikWeightField.SetValue(animatorExample, 0f);
+        obj.transform.position = targetPosition;
+
+        // 指定された時間だけその位置にとどまる
+        yield return new WaitForSeconds(holdDuration);
+
+        // 戻り位置を計算: 参照オブジェクトのx,y座標、元のz座標
+        Vector3 referencePosition = referenceObject.transform.position;
+        Vector3 returnPosition = new Vector3(referencePosition.x, referencePosition.y, originalPosition.z);
+
+        // 戻り処理: ターゲット位置から戻り位置へ
+        elapsedTime = 0f;
+        while (elapsedTime < moveDuration)
+        {
+            obj.transform.position = Vector3.Lerp(targetPosition, returnPosition, elapsedTime / moveDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+        obj.transform.position = returnPosition;
+
+        // 移動完了フラグをリセット
+        isMoving = false;
     }
 
     /// <summary>
@@ -206,7 +303,7 @@ public class AnimationController : MonoBehaviour
     {
         if (vrmLoader != null)
         {
-            vrmLoader.TriggerExitScreenAnimation();
+            vrmLoader.StartExitProcess();
         }
         else
         {
@@ -215,7 +312,7 @@ public class AnimationController : MonoBehaviour
 
         if (defaultAnimationController != null)
         {
-            defaultAnimationController.TriggerExitScreenAnimation();
+            defaultAnimationController.StartExitProcess();
         }
         else
         {
@@ -230,7 +327,7 @@ public class AnimationController : MonoBehaviour
     {
         if (vrmLoader != null)
         {
-            vrmLoader.TriggerEnterScreenAnimation();
+            vrmLoader.StartEnterProcess();
         }
         else
         {
@@ -239,7 +336,7 @@ public class AnimationController : MonoBehaviour
 
         if (defaultAnimationController != null)
         {
-            defaultAnimationController.TriggerEnterScreenAnimation();
+            defaultAnimationController.StartEnterProcess();
         }
         else
         {

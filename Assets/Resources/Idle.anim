@@ -63377,46 +63377,65 @@ AnimationClip:
   m_HasGenericRootTransform: 1
   m_HasMotionFloatCurves: 0
   m_Events:
+  - time: 0
+    functionName: BlinkOpen
+    data: 
+    objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
   - time: 3.6
     functionName: BlinkOpen
     data: 
-    objectReferenceParameter: {fileID: 0}
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 3.6666667
+  - time: 3.7
     functionName: Blink
     data: 
-    objectReferenceParameter: {fileID: 0}
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
-  - time: 3.7333333
+  - time: 3.8
     functionName: BlinkOpen
     data: 
-    objectReferenceParameter: {fileID: 0}
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
   - time: 7.233333
     functionName: BlinkOpen
     data: 
-    objectReferenceParameter: {fileID: 0}
-    floatParameter: 0
-    intParameter: 0
-    messageOptions: 0
-  - time: 7.266667
-    functionName: Blink
-    data: 
-    objectReferenceParameter: {fileID: 0}
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
   - time: 7.3333335
+    functionName: Blink
+    data: 
+    objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
+      type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
+  - time: 7.4
     functionName: BlinkOpen
     data: 
     objectReferenceParameter: {fileID: 11500000, guid: 1f085fa70cd98964c8c358843fb513d7,
       type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
+  - time: 10
+    functionName: BlinkOpen
+    data: 
+    objectReferenceParameter: {fileID: 0}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0
