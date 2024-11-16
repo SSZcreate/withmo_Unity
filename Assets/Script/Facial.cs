@@ -18,7 +18,7 @@ public class Facial : MonoBehaviour
         // Vrm10InstanceからVrm10RuntimeExpressionコンポーネントを取得
         vrm10RuntimeExpression = vrmInstance.Runtime.Expression;
     } 
-    //笑顔
+    
     void Smile(){
         vrm10RuntimeExpression.SetWeight(ExpressionKey.Happy, 1);
     }
